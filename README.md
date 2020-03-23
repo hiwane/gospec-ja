@@ -2056,3 +2056,52 @@ func(p *Point, factor float64)
 
 しかしながら，この方法で宣言された関数はメソッドではない．
 
+# 式
+
+式 (expression) は．
+演算子と関数をオペランドへの適用によって値の計算を指定する．
+
+## オペランド
+
+オペランド (operand) は式における基本値を示す．
+オペランドは，
+リテラル， または，
+[定数](#定数宣言)，
+[変数](#変数宣言)，
+[関数](#関数宣言) を示す
+(場合によっては[修飾された](#修飾識別子))
+非[ブランク](#ブランク識別子)な識別子，または，
+丸括弧で囲まれた式である．
+
+[ブランク](#ブランク識別子)は
+[代入](#代入)の左辺においてのみ
+オペランドとして現れる．
+
+```
+Operand     = Literal | OperandName | "(" Expression ")" .
+Literal     = BasicLit | CompositeLit | FunctionLit .
+BasicLit    = int_lit | float_lit | imaginary_lit | rune_lit | string_lit .
+OperandName = identifier | QualifiedIdent .
+```
+
+## 修飾識別子
+
+修飾識別子 (qualified identifier) は
+パッケージ名を前頭において修飾された識別子である．
+パッケージ名と識別子はどちらも
+[ブランク](#ブランク識別子)にできない．
+
+```
+QualifiedIdent = PackageName "." identifier .
+```
+
+修飾識別子は，
+[インポート](#インポート宣言)されなければならない，
+別のパッケージの識別子にアクセスする．
+識別子は，[エクスポート](#エクスポートされた識別子)されており，
+そのパッケージの[パッケージブロック](#ブロック)で宣言されていなければならない．
+
+```
+math.Sin	// パッケージ math の Sin 関数を示す
+```
+
