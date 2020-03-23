@@ -1,15 +1,18 @@
 Go プログラミング言語仕様
 ==========================
 
-- version 2019/07/31
+- The Go Programming Language Specification version 2019/07/31
 - https://golang.org/ref/spec のなんちゃって日本語訳
-- 
-- @ はどうすんべ
-- source code と source text
+- https://github.com/hiwane/gospec-ja
+- @ はこなれていない．どうすんべ
 
 訳注
-- letter を character を区別するため，letter は英字と訳す
+- letter を character を区別するため，letter は英字と訳す．
 - valid/invalid は有効/無効, legal/illegal は正当/不当と訳す．
+- letter と character を区別するため，letter は英字，character は文字と訳す．
+- source code と source text
+- あとで：ですます→である
+- 表記ユレ：パラメータ，パラメーター，引数
 
 # イントロダクション
 
@@ -19,7 +22,7 @@ Go プログラミング言語仕様
 Go はシステムプログラミングを念頭において設計された，汎用言語です．
 強い型付け，ガベージコレクションを持ち，並行プログラミング@ (concurrent programming) を明示的にサポートしています．
 プログラムは，
-性質が依存関係の効率的な管理を実現する *パッケージ*　で構成される．
+性質が依存関係の効率的な管理を実現する **パッケージ**　で構成される．
 
 文法はコンパクト，かつ，規則的@ (regular) であり，
 統合開発環境などの自動ツールによる簡易な解析が可能になります．
@@ -104,7 +107,6 @@ Nd = Number, decimal digit
 
 ## 英字と数字 (letters and digits)
 
-訳注：letter を character を区別するため，letter は英字と訳す
 
 @@@@
 
@@ -180,7 +182,7 @@ ThisVariableIsExported
 ```
 
 
-いくつかの識別子は事前宣言%%されています．
+いくつかの識別子は[事前宣言](#事前宣言された識別子)されています．
 
 ## キーワード
 
@@ -196,7 +198,7 @@ continue     for          import       return       var
 
 ## 演算子と句読点
 
-以下の文字列は識別子 (代入演算子 (assignment operators) を含む) と句読点 (punctuation) です．
+以下の文字列は[演算子](#演算子) ([代入演算子](#代入) (assignment operators) を含む) と句読点 (punctuation) です．
 
 ```
 +    &     +=    &=     &&    ==    !=    (    )
@@ -210,7 +212,7 @@ continue     for          import       return       var
 ## 整数リテラル
 
 整数リテラル (integer literal) は，
-整数定数を表現する数字の列です．
+[整数定数](#定数)を表現する数字の列です．
 オプションの接頭辞は，
 非10進数を表現する．
 `0b` と `0B` は2進数，
@@ -257,7 +259,7 @@ _42         // 整数リテラルではなく，識別子
 
 ## 浮動小数点リテラル
 
-浮動小数点リテラルは，浮動小数点定数の10進数または　16進数表現である．
+浮動小数点リテラルは，[浮動小数点定数](#定数)の10進数または　16進数表現である．
 
 10進浮動小数リテラルは，整数部 (10進数)，小数点，小数部 (10進数)，
 指数部 (`e` または `E` とオプションの符号，10進数）から成る．
@@ -615,7 +617,7 @@ interpreted_string_lit = `"` { unicode_value | byte_value } `"` .
 動的な型は，
 実行中に変化する可能性があるが，
 インターフェース変数に割り当てられた値は常に
-常に変数の静的な型に割り当て可能 ([assignable](#割り当て可能)) です．
+常に変数の静的な型に[代入可能](#代入可能性) (assignable) です．
 
 
 ```go
@@ -1614,4 +1616,443 @@ Go は，[ブロック](#ブロック) を用いて，
 [エクスポート](#エクスポートされた識別子)されない」とき，
 その識別子たちは異なる．
 
+
+## 定数宣言
+
+定数宣言 (constant declaration)
+識別子のリストに[定数式](#定数式) (constant expression)
+のリストの値をバインドする．
+識別子の数は，定数式の数と一致しなければならず，
+左辺の n 番目の識別子に，
+右辺の n 番目の定数式の値がバインドされる．
+<a name="ConstSpec"></a>
+
+```
+ConstDecl      = "const" ( ConstSpec | "(" { ConstSpec ";" } ")" ) .
+ConstSpec      = IdentifierList [ [ Type ] "=" ExpressionList ] .
+
+IdentifierList = identifier { "," identifier } .
+ExpressionList = Expression { "," Expression } .
+```
+
+型が示された場合，
+すべての定数は指定された型をとり，
+式はその型に[代入可能](#代入可能性)でなければならない．
+型が省略された場合，
+定数は対応する式の個々の型をとる．
+式の値が型なし[定数](#定数)の場合，
+宣言された定数は，型なしのままであり，
+定数識別子は，定数値を示す．
+例えば，
+式が浮動小数点リテラルである場合，
+定数の小数部がゼロであったとしても
+定数識別子は，浮動小数定数を示す．
+
+```go
+const Pi float64 = 3.14159265358979323846
+const zero = 0.0         // 型なし浮動小数点定数
+const (
+	size int64 = 1024
+	eof        = -1  // 型なし整数定数
+)
+const a, b, c = 3, 4, "foo"  // a = 3, b = 4, c = "foo", 型なし整数定数と型なし文字列定数
+const u, v float32 = 0, 3    // u = 0.0, v = 3.0
+```
+
+丸括弧で囲まれた (parenthesized) `const` 宣言リスト内では，
+最初の `ConstSpec` 以外の式リストは省略できる．
+このような空の式リストは，
+最初の先行する空でない式リストとその型のテキスト置換と等価である．
+それゆえに，
+式リストの省略は，
+前の式リストの繰り返しを繰り返すことと等価である．
+識別子の数は，
+前のリストにおける式の数と等価である．
+このメカニズムは，
+[`iota` 定数生成器](#iota) を使うことで，
+連続値の容易な宣言を可能とする．
+
+```go
+const (
+	Sunday = iota
+	Monday
+	Tuesday
+	Wednesday
+	Thursday
+	Friday
+	Partyday
+	numberOfDays  // この定数はエクスポートされない
+)
+```
+
+## iota
+
+
+[定数宣言](#定数宣言)内で，
+事前宣言された識別子 `iota` は，
+連続した型なし整数[定数](#定数)を表現する．
+その値は，
+定数宣言におけるそれぞれの [`ConstSpec`](#ConstSpec) ゼロから始まるインデックスである．
+関連する定数の集合を作成するために使用できる．
+
+```go
+const (
+	c0 = iota  // c0 == 0
+	c1 = iota  // c1 == 1
+	c2 = iota  // c2 == 2
+)
+
+const (
+	a = 1 << iota  // a == 1  (iota == 0)
+	b = 1 << iota  // b == 2  (iota == 1)
+	c = 3          // c == 3  (iota == 2, 使用されない)
+	d = 1 << iota  // d == 8  (iota == 3)
+)
+
+const (
+	u         = iota * 42  // u == 0     (型なし整数定数)
+	v float64 = iota * 42  // v == 42.0  (float64 定数)
+	w         = iota * 42  // w == 84    (型なし整数定数)
+)
+
+const x = iota  // x == 0
+const y = iota  // y == 0
+```
+
+定義により，
+同一の `ConstSpec` 内での
+`iota` の複数回の使用は，すべて同じ値をもつ．
+
+```go
+const (
+	bit0, mask0 = 1 << iota, 1<<iota - 1  // bit0 == 1, mask0 == 0  (iota == 0)
+	bit1, mask1                           // bit1 == 2, mask1 == 1  (iota == 1)
+	_, _                                  //                        (iota == 2, 使用されない)
+	bit3, mask3                           // bit3 == 8, mask3 == 7  (iota == 3)
+)
+```
+
+最後の例は，最後の空でない式リストの[暗黙的な繰り返し](#定数宣言)を利用している．
+
+## 型宣言
+
+型宣言 (type declaration) は，
+**型名** (type name) である識別子に[型](#型) (type) をバインドする．
+型宣言は，
+エイリアス宣言 (alias declarations) と
+型定義 (type definitions) の
+2 つの形式がある．
+
+```
+TypeDecl = "type" ( TypeSpec | "(" { TypeSpec ";" } ")" ) .
+TypeSpec = AliasDecl | TypeDef .
+```
+
+### エイリアス宣言
+
+エイリアス宣言 (alias declaration) は
+識別子に与えられた型をバインドする．
+
+```
+AliasDecl = identifier "=" Type .
+```
+
+識別子の[スコープ](#宣言とスコープ)内では，
+その識別子は，与えられた型のエイリアスとして機能する．
+
+```go
+type (
+	nodeList = []*Node  // nodeList と []*Node は同じ型である
+	Polar    = polar    // Polar と polar は同じ型を示す
+)
+```
+
+### 型定義
+
+型定義 (type definition) は
+指定された型と
+同じ[基底型](#型) と演算をもつ，
+新しく，別の型を生成し，
+それの新しい型を識別子にバインドする．
+
+
+```
+TypeDef = identifier Type .
+```
+
+新しい型は**定義型** (defined type) と呼ばれる．
+新しい型は，
+生成元となる型を含む，
+他のあらゆる型とは，
+[異なる](#型の一意性)．
+
+```go
+type (
+	Point struct{ x, y float64 }  // Point と struct{ x, y float64 } は異なる型である
+	polar Point                   // polar と Point は異なる型を示す
+)
+
+type TreeNode struct {
+	left, right *TreeNode
+	value *Comparable
+}
+
+type Block interface {
+	BlockSize() int
+	Encrypt(src, dst []byte)
+	Decrypt(src, dst []byte)
+}
+```
+
+定義型は，それに関連付けられた[メソッド](#メソッド宣言)をもつ場合がある．
+定義型は，指定された型にバインドされたメソッドは継承 (inherit) しないが，
+インターフェース型，または，
+複合型の要素の
+[メソッド集合](#メソッド集合)は変更されない．
+
+
+```go
+// Mutex は 2 つのメソッド (Lock, Unlock) をもつデータ型である．
+type Mutex struct         { /* Mutex フィールド */ }
+func (m *Mutex) Lock()    { /* Lock の実装 */ }
+func (m *Mutex) Unlock()  { /* Unlock の実装 */ }
+
+// NewMutex は，Mutex と同じ構成であるが，そのメソッド集合は空である．
+type NewMutex Mutex
+
+// *Mutex を基底型とする，PtrMutex のメソッド集合は変更されないが，
+// PtrMutex のメソッド集合は空である
+type PtrMutex *Mutex
+
+// *PrintableMutex のメソッド集合は埋め込みフィールド Mutex にバインドされた
+// 2 つのメソッド Lock と Unlock を含む
+type PrintableMutex struct {
+	Mutex
+}
+
+// MyBlock は Block と同じメソッド集合をもつインターフェース型である
+type MyBlock Block
+```
+
+型定義は，
+ブール型，数値型，文字列型とは異なる型を定義し，
+メソッドを関連付けることができる．
+
+```
+type TimeZone int
+
+const (
+	EST TimeZone = -(5 + iota)
+	CST
+	MST
+	PST
+)
+
+func (tz TimeZone) String() string {
+	return fmt.Sprintf("GMT%+dh", tz)
+}
+```
+
+## 変数宣言
+
+変数宣言 (variable declaration) は
+1 つ以上の変数を生成し，
+対応する識別子を変数にバインドし，
+それぞれに型と初期値を与える．
+
+```
+VarDecl     = "var" ( VarSpec | "(" { VarSpec ";" } ")" ) .
+VarSpec     = IdentifierList ( Type [ "=" ExpressionList ] | "=" ExpressionList ) .
+```
+
+```go
+var i int
+var U, V, W float64
+var k = 0
+var x, y float32 = -1, -2
+var (
+	i       int
+	u, v, s = 2.0, 3.0, "bar"
+)
+var re, im = complexSqrt(-1)
+var _, found = entries[name]  // map lookup; only interested in "found"
+```
+
+式のリスト (`ExpressionList`) が与えられたら，
+変数は
+以下の[代入](#代入)規則に従った式によって初期化される．
+そうでなければ，各変数は[ゼロ値](#ゼロ値)で初期化される．
+
+型が指定されると，変数はその型になる．
+型が指定されなければ，各変数は代入における対応する初期値の型が与えられる．
+その値が型なし定数であれば，
+最初に暗黙的に[デフォルト型](#定数)に[変換](#変換)される．
+型なしブール値であれば，最初に暗黙的に `bool` 型に変換される．
+事前宣言された値 `nil` は，明示的な型なしに初期値として使用することができない．
+
+
+```go
+var d = math.Sin(0.5)  // d は float64
+var i = 42             // i は int
+var t, ok = x.(T)      // t は T, ok は bool
+var n = nil            // 不当
+```
+
+実装上の制限：
+コンパイラは，
+[関数本体](#関数宣言)内で宣言された変数が，
+関数内で使用されない場合，
+不正とすることがある．
+
+
+## 簡潔な変数宣言
+
+**簡潔な変数宣言** (short variable declaration) は次の文法を使用する．
+
+```
+ShortVarDecl = IdentifierList ":=" ExpressionList .
+```
+
+これは，初期値があるが型がない通常の[変数宣言](#変数宣言)の省略形である．
+
+```
+"var" IdentifierList = ExpressionList .
+```
+
+```go
+i, j := 0, 10
+f := func() int { return 7 }
+ch := make(chan int)
+r, w, _ := os.Pipe()  // os.Pipe() は Files の接続ペア(r, w)と error を返す
+_, y, _ := coord(p)   // coord() は 3 つの値を返す; しかし， y 軸にしか興味がない
+```
+
+
+通常の変数宣言とは異なり，
+簡潔な変数宣言では，
+同じブロック内
+(または，そのブロックが関数本体であればパラメーターリスト)
+で前に宣言された同じ型の変数
+そして，少なくとも 1 つの非[ブランク](#ブランク識別子)な変数が新しい場合，
+変数を**再宣言** (redeclare) できる．
+結果として，再宣言は多値の簡潔な変数宣言においてのみ使用される．
+再宣言では新しい変数は導入されず，
+新しい値が元の変数に代入される．
+
+
+```go
+field1, offset := nextField(str, 0)
+field2, offset := nextField(str, offset)  // オフセットを再宣言する
+a, a := 1, 2                              // 不正: a が他の場所で宣言されている場合，a の二重宣言または新規変数なし
+```
+
+簡潔な変数宣言は，関数内でのみ現れる．
+[`if`文](#if文)，
+[`for`文](#for文)，
+[`switch`文](#switch文) の初期化のように
+ローカル一時変数のの宣言にしようできる．
+
+## 関数宣言
+
+関数宣言 (function declaration) は
+**関数名** (function name) である識別子に，
+関数をバインドする．
+
+```
+FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
+FunctionName = identifier .
+FunctionBody = Block .
+```
+
+関数の[シグネチャー](#関数型)が復帰パラメータたちを宣言する場合，
+関数本体の文のリストは，
+[終端文](#終端文) (terminating statement) で終了しなければならない．
+
+
+```go
+func IndexRune(s string, r rune) int {
+	for i, c := range s {
+		if c == r {
+			return i
+		}
+	}
+	// 無効: return 文がない
+}
+```
+
+関数は，その本体なしで宣言される場合がある．
+そのような宣言は，
+アセンブリルーチン (assembly routine) のように
+Go の外で実装された関数のシグネチャーを提供する．
+
+```go
+func min(x int, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func flushICache(begin, end uintptr)  // 外部で実装される
+```
+
+
+## メソッド宣言
+
+メソッド (method) は **レシーバー** (receiver) をもつ関数である．
+メソッド宣言 (method declaration) は
+**メソッド名** (method name) である識別子に，メソッドをバインドし，
+レシーバーの**基本型** (base type) にメソッドを関連付ける．
+
+```
+MethodDecl = "func" Receiver MethodName Signature [ FunctionBody ] .
+Receiver   = Parameters .
+```
+
+レシーバーは，メソッド名の前にある追加のパラメータ節で指定される．
+そのパラメータ節は，ひとつの不可変数引数で，そのレシーバーを宣言する．
+その型は，[定義](#定義型)型 `T`，または，定義型 `T`
+へのポインターでなければならない．
+`T` はレシーバー**基本型** (base type)と呼ばれる．
+レシーバー基本型は，ポインター型またはインターフェース型にすることはできず，
+メソッドとして，同じパッケージ内で定義されなければならない．
+そのメソッドはレシーバー基本型に**バインド** (bind) されると言い，
+メソッド名は，型 `T` または型 `*T` の[セレクタ](#セレクタ)内でのみ表示される．
+
+非[ブランク](#ブランク識別子)なレシーバー識別子は，
+メソッドシグネチャー内で，[一意](#識別子の一意性)でなければならない．
+レシーバーの値がメソッドの本体内で参照されないなら，
+その識別子は宣言において省略できる．
+一般に，関数のメソッドとパラメータにも同じことが当てはまる．
+
+基本型の場合，
+基本型にバイドされるメソッドの非ブランク名は一意でなければならない．
+基本型が[構造体型](#構造体型)であるなら，
+非ブランクなメソッドとフィールド名は別でなければならない．
+
+定義型 `Point` が与えられたとき，宣言
+
+```go
+func (p *Point) Length() float64 {
+	return math.Sqrt(p.x * p.x + p.y * p.y)
+}
+
+func (p *Point) Scale(factor float64) {
+	p.x *= factor
+	p.y *= factor
+}
+```
+
+は，(レシーバー型 `*Point` の) メソッド `Length` と `Scale` を
+基本型 `Point` にバインドする．
+
+メソッドの型は，
+最初の引数をそのレシーバーとする関数の型である．
+例えば，メソッド `Scale` は次の型をもつ．
+
+```go
+func(p *Point, factor float64)
+```
+
+しかしながら，この方法で宣言された関数はメソッドではない．
 
