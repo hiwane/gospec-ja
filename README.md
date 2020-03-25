@@ -7,11 +7,10 @@ Go プログラミング言語仕様
 - @ はこなれていない．どうすんべ
 
 訳注
-- letter を character を区別するため，letter は英字と訳す．
 - valid/invalid は有効/無効, legal/illegal は正当/不当と訳す．
 - letter と character を区別するため，letter は英字，character は文字と訳す．
 - source code と source text
-- あとで：ですます→である
+- あとでやる：ですます→である
 - 表記ユレ：パラメータ，パラメーター，引数
 
 # イントロダクション
@@ -53,11 +52,11 @@ Production は， Term と以下の高い演算子によって構成される式
 
 小文字の production 名は，字句トークンを識別するために使用されます．
 非末端は CamelCase です．
-字句トークンはダブルクオーテーション "" またはバッククォート `` で囲まれます．
+字句トークンはダブルクオーテーション `""` またはバッククォート `` で囲まれます．
 
-形式 `a … b` は，`a` から `b` の文字列の代替に使用します．
+形式 `a … b` は，`a` から `b` の文字列の代替に使用する．
 3点リーダー `…` は @@@．
-文字 `…` (3文字・・・ とは対照的に) は Go言語のトークンではありません．
+文字 `…` (3文字 `...` とは対照的に) は Go言語のトークンではない．
 
 # ソースコード表現
 
@@ -80,7 +79,8 @@ Production は， Term と以下の高い演算子によって構成される式
 
 ## 文字 (characters)
 
-以下の term は，特定の Unicode 文字クラス (character class) を示すために使用されます．
+以下の項 (term) は，
+特定の Unicode 文字クラス (character class) を示すために使用する．
 
 ```
 newline        = /* Unicode 符号位置 (code point) U+000A */ .
@@ -90,25 +90,36 @@ unicode_digit  = /* "数, 10進数 / Number, decimal digit" に分類される�
 ```
 
 [The Unicode Standard 8.0](https://www.unicode.org/versions/Unicode8.0.0/) では，
-4.5節 "General Category" 節は文字カテゴリの集合を定義しています．
-Go は，Lu, Ll, Lt, Lm, Lo  @@@
+4.5節 "General Category" 節は文字カテゴリの集合を定義する．
+Go は，Letter カテゴリの `Lu`, `Ll`, `Lt`, `Lm`, `Lo` を Unicode 英字として
+すべての文字を扱い，
+Number カテゴリ `Nd` を Unicode 数字として扱う．
 
 
 訳注：
 
 ```
-Lu = Letter, uppercase
-Ll = Letter, lowercase
-Lt = Letter, titlecase
-Lm = Letter, modifier
-Lo = Letter, other
-Nd = Number, decimal digit
+Lu = Letter, uppercase (英字，大文字 A-Z)
+Ll = Letter, lowercase (英字，小文字 a-z)
+Lt = Letter, titlecase (英字，タイトル文字)
+Lm = Letter, modifier (英字，修飾)
+Lo = Letter, other (英字，その他）
+Nd = Number, decimal digit (数字，10進数字 0-9)
 ```
 
 ## 英字と数字 (letters and digits)
 
 
-@@@@
+アンダースコア文字 `_` (`U+005F`) は，
+英字 (letter) として考える．
+
+```
+letter        = unicode_letter | "_" .
+decimal_digit = "0" … "9" .
+binary_digit  = "0" | "1" .
+octal_digit   = "0" … "7" .
+hex_digit     = "0" … "9" | "A" … "F" | "a" … "f" .
+```
 
 
 # 字句要素
@@ -116,48 +127,49 @@ Nd = Number, decimal digit
 ## コメント
 
 コメントはプログラムのドキュメントとして機能します．
-次の２つの形式があります．
+次の 2 つの形式があります．
 
-1. 行コメント： 文字列 `//` から，行末まで
-2. 一般的なコメント： `/*` で始まり，最初の後続の `*/` まで．（訳注：入れ子不可 `/* ABC /* DEF */ GHI */` では GHI はコメントではない）
+1. **行コメント**： 文字列 `//` から，行末まで
+2. 一般的な**コメント**： `/*` で始まり，最初の後続の `*/` まで．（訳注：入れ子不可 `/* ABC /* DEF */ GHI */` では GHI はコメントではない）
 
-コメントは，ルーン (@ rune) や文字列リテラル@ 内，または，コメント内では開始できません．
+コメントは，[ルーン](#ルーンリテラル)や[文字列リテラル](#文字列リテラル)内，または，コメント内では開始できません．
 改行を含まない「一般的なコメント」はスペースのように機能します．
 他のコメントは改行のように機能します．
 
 ## トークン
 
 トークンは Go言語の語彙を形成します．
-識別子 (identifier)，
-キーワード (keyword)，
-演算子 (operator) と句読点 (punctuation)，
-リテラル (literal) の 4 つのクラスがあります．
-空白 (`U+0020`)，
+**識別子** (identifier)，
+**キーワード** (keyword)，
+**演算子** (operator) と**句読点** (punctuation)，
+**リテラル** (literal) の 4 つのクラスがあります．
+**空白** (`U+0020`)，
 水平タブ (`U+0009`)，
-キャリッジ リターン (`U+000D`)，
-改行文字 (ラインフィード，LF)(`U+000A`) から形成される
+キャリッジ リターン (CR, `U+000D`)，
+改行文字 (ラインフィード，LF，`U+000A`) から形成される
 ホワイトスペースは，
 単一に結合するであろうトークンを分離する場合を除いて無視される．
-また，改行文字とファイルの末尾はセミコロンを挿入するトリガーになる場合があります．
+また，改行文字とファイルの末尾は[セミコロン](#セミコロン)を挿入するトリガーになる場合があります．
 入力をトークンに分割する間，
 次のトークンは有効なトークンを形成する最長の文字シーケンスです．
 
-訳注：`abcde` は `abc`と`de`と分かれることはなく，最長の `abcde`である
+訳注：`abcde` は `abc`と`de` のように別のトークンとして扱われず，最長の `abcde` である
 
 ## セミコロン
 
 
-正式な文法では，セミコロン ";" を多くの production の終端として使用する．
+正式な文法では，セミコロン `;` を多くの production の終端として使用する．
 Goプログラムでは，次の 2 つの規則を利用して，多くの場合セミコロンを省略できる．
 
 1. 入力をトークンに分割するとき，
 行の最後のトークンが以下のとき，その後ろに
 セミコロンが自動的に挿入される．
-  - 識別子
-  - 整数，浮動小数点数，虚数，ルーン，文字列リテラル
-  - キーワード break, continue, fallthrough, return
-  - 演算子や句読点 ++, --, ), ], }
-2. 複雑な文が 1行を専有できるようにするには，閉じカッコ ")", "}" の前では省略できる
+  - [識別子](#識別子)
+  - [整数リテラル](#整数リテラル)，[浮動小数点リテラル](#浮動小数点リテラル)，
+[虚数リテラル](#虚数リテラル)，[ルーンリテラル](#ルーンリテラル)，[文字列リテラル](#文字列リテラル)
+  - [キーワード](#キーワード) `break`, `continue`, `fallthrough`, `return`
+  - 演算子や句読点 `++`, `--`, `)`, `]`, `}`
+2. 複雑な文が 1行を専有できるようにするには，閉じカッコ `)`, `}` の前では省略できる
 [To allow complex statements to occupy a single line, a semicolon may be omitted before a closing ")" or "}".]
 
 
@@ -592,28 +604,29 @@ interpreted_string_lit = `"` { unicode_value | byte_value } `"` .
 # 変数
 
 変数 (variable) は，`値` を保持するための保管場所である．
-許容値の集合は，変数の型によって決まる．
+許容値の集合は，変数の**[型](#型)**によって決まる．
 
-変数宣言，または，関数の引数と復帰値のための関数宣言や関数リテラルのシグネチャは，
+[変数宣言](#変数宣言)，または，関数の引数と復帰値のための
+[関数宣言](#関数宣言)や[関数リテラル](#関数リテラル)のシグネチャは，
 名前付き変数の保管場所を予約する．
-ビルトイン関数 `new` の呼び出しや，
+ビルトイン関数 [`new`](#割り当て) の呼び出しや，
 [複合リテラル](#複合リテラル) (composite literal) のアドレスの取得は，
 実行時に変数の保管場所が割り当てられる．
 そのような無名変数 (anonymous variable) は，
-(おそらく暗黙の) ポインター間接 (pointer indirection)
-参照される．@@@
+(おそらく暗黙の) [ポインター間接](#アドレス演算子) (pointer indirection @@@)
+参照される．
 
-配列 (array)，スライス (slice), struct 型の
-構造化変数 (structured variable) は，個別にアドレス指定できる要素とフィールドがある．
+[配列](#配列型) (array)，[スライス](#配列型) (slice), [構造体型](#構造体型)の
+**構造化**変数 (structured variable) は，個別にアドレス指定できる要素とフィールドがある．
 そのような各要素は変数のように機能する．
 
-変数の静的な型 (または単に型）は，
+変数の**静的な型** (static type) (または単に**型**）は，
 その宣言で指定された型，
 `new` 呼び出しや複合リテラルによって与えられる型，
 構造化変数の要素の型である．
 インターフェース型の変数もまた，
 実行時に代入された値の具体的な型 (型を持たない事前宣言された識別子 `nil` の場合を除く) である
-個別の動的な型がある．
+個別の**動的な型** (dynamic type) がある．
 動的な型は，
 実行中に変化する可能性があるが，
 インターフェース変数に割り当てられた値は常に
@@ -628,8 +641,8 @@ x = v              // x 値 (*T)(nil) であり，動的な方 *T をもつ
 ```
 
 変数の値は，
-式に含まれる変数を参照することによって取得される;
-それは，変数に代入された最新の値である．
+[式](#式)に含まれる変数を参照することによって取得される;
+それは，変数に[代入された](#代入)最新の値である．
 変数に値が割り当てられていない場合，
 その値は，その型の[ゼロ値](#ゼロ値)です．
 
@@ -2291,5 +2304,67 @@ noteFrequency := map[string]float32{
 	"C0": 16.35, "D0": 18.35, "E0": 20.60, "F0": 21.83,
 	"G0": 24.50, "A0": 27.50, "B0": 30.87,
 }
+```
+
+
+## 関数リテラル
+
+関数リテラル (function literal) は
+無名関数を表現する．
+
+```
+FunctionLit = "func" Signature FunctionBody .
+```
+
+```go
+func(a, b int, z float64) bool { return a*b < int(z) }
+```
+
+関数はリテラルは，変数に代入されるか，直接呼び出される．
+
+```go
+f := func(x, y int) int { return x + y }
+func(ch chan int) { ch <- ACK }(replyChan)
+```
+
+関数リテラルは**クロージャー** (closure) である．
+関数リテラルは，周囲の関数で定義された変数を参照する場合がある．
+これらの変数は，周囲の関数と関数リテラルで共有され，
+アクセス可能である限り，生存する (survive)．
+
+## 一次式
+
+一次式 (primary expression) は，単項式 (unary expression) と
+二項式 (binary expression) のオペランドである．
+
+```
+PrimaryExpr =
+	Operand |
+	Conversion |
+	MethodExpr |
+	PrimaryExpr Selector |
+	PrimaryExpr Index |
+	PrimaryExpr Slice |
+	PrimaryExpr TypeAssertion |
+	PrimaryExpr Arguments .
+
+Selector       = "." identifier .
+Index          = "[" Expression "]" .
+Slice          = "[" [ Expression ] ":" [ Expression ] "]" |
+                 "[" [ Expression ] ":" Expression ":" Expression "]" .
+TypeAssertion  = "." "(" Type ")" .
+Arguments      = "(" [ ( ExpressionList | Type [ "," ExpressionList ] ) [ "..." ] [ "," ] ] ")" .
+```
+
+```go
+x
+2
+(s + ".txt")
+f(3.1415, true)
+Point{1, 2}
+m["foo"]
+s[i : j + 1]
+obj.color
+f.p[i].x()
 ```
 
