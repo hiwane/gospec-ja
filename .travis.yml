@@ -1,0 +1,10 @@
+language: sh
+
+before_install:
+  - echo "before"
+  - echo `which python`
+  - echo `which python3`
+
+script:
+  - sh ./.test.sh
+
