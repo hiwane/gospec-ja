@@ -4,6 +4,7 @@ before_install:
   - echo "before"
   - echo `which python`
   - echo `which python3`
+  - echo `which sh`
 
 script:
   - sh ./.test.sh
