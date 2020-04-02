@@ -1051,7 +1051,7 @@ BaseType    = Type .
 ## 関数型
 
 関数型 (function type)
-は同じパラメーターと復帰型をもつすべての関数の集合を表す．
+は同じパラメーター (parameter) と復帰型 (result type) をもつすべての関数の集合を表す．
 関数型の未初期化の変数の値は  `nil` です．
 
 ```
@@ -1076,6 +1076,9 @@ ParameterDecl  = [ IdentifierList ] [ "..." ] Type .
 `...` を接頭辞にもつ型を持つ場合がある．
 そのようなパラメーターをもつ関数は **可変長引数** (variadic) と呼ばれ，
 そのパラメーターとして，0個以上の引数として呼び出される．
+
+
+訳注：@@@ [復帰パラメーター](#return文)
 
 ```go
 func()
@@ -1566,7 +1569,7 @@ Go は，[ブロック](#ブロック)を用いて，
 内部ブロック (inner block)で再宣言できる．
 内部ブロックの識別子は，スコープに含まれるが，
 内部ブロックの識別子は，
-内部宣言によって宣言された実体 (entity) を示す．
+内部宣言によって宣言されたエンティティ (entity) を示す．
 
 [パッケージ句](#パッケージ句) (package clause) は，宣言ではない．
 パッケージ名はスコープに現れることはない．
@@ -1991,7 +1994,7 @@ FunctionBody = Block .
 ```
 
 関数の[シグネチャー](#関数型)が復帰パラメーターたちを宣言する場合，
-関数本体の文のリストは，
+関数本体 (`FunctionBody`) の文のリストは，
 [終端文](#終端文) (terminating statement) で終了しなければならない．
 
 
@@ -3757,7 +3760,7 @@ string(MyRunes{0x767d, 0x9d6c, 0x7fd4})  // "\u767d\u9d6c\u7fd4" == "白鵬翔"
 同じ種類の型なし定数を復帰する．
 つまり，
 ブール定数，整数定数，浮動小数定数，複素数定数，文字列定数である．
-2 項演算 (シフト演算を除く) の型なしオペランドの種類が，異なる場合，
+二項演算 (シフト演算を除く) の型なしオペランドの種類が，異なる場合，
 復帰値は，
 整数，ルーン，浮動小数点，複素数の後半のオペランドの種別になる．@@@
 例えば，型なし整数定数は，
@@ -3905,4 +3908,88 @@ func sqr(x int) int { return x*x }
 デフォルトの結合性を上書きすることによって評価に影響を与える．
 式 `x + (y + z)` は，`x` の加算の前に加算 `y + z` が実行される．
 
+
+# 文
+
+文 (statement) は実行を制御する．
+
+```
+Statement =
+	Declaration | LabeledStmt | SimpleStmt |
+	GoStmt | ReturnStmt | BreakStmt | ContinueStmt | GotoStmt |
+	FallthroughStmt | Block | IfStmt | SwitchStmt | SelectStmt | ForStmt |
+	DeferStmt .
+
+SimpleStmt = EmptyStmt | ExpressionStmt | SendStmt | IncDecStmt | Assignment | ShortVarDecl .
+```
+
+## 終端文
+
+**終端文** (terminating statement)
+同一[ブロック](#ブロック)内で，その後に字句的に現れるすべての文の実行を防ぐ．
+次の文は終端である．
+prevents execution of all statements that lexically appear after it in the same block. The following statements are terminating:
+
+1. [`return`](#return文)文または[`goto`](#goto文)文
+2.  ビルトイン関数 [`panic`](#パニック対処)の呼び出し
+3. 文のリストが終端文によって終わる [ブロック](#ブロック)
+4. [`if`文](#if文) であり，
+  - `else` 節があり，かつ
+  - どちらの節も終端文である．
+5. [`for`文](#for文) で，
+  - その `for` 文を参照する `break` 文がない，かつ
+  - ループ条件が省略されている．
+6. [`switch`文](#switch文) であり，
+  - その `switch` 文を参照する `break` 文がない，かつ，
+  - `default` ケースがある，かつ，
+  - `default` を含むいずれの文のリストも，終端文で終わるか，
+    ラベル付けされた[`fallthrough`文](#fallthrough文)である．
+7. [`select`文](#select文) であり，
+  - その `select` 文を参照する `break` 文がない，かつ，
+  - `default` を含むいずれの文リストも，終端文で終わる．
+8. 終端文をラベル付けする[ラベル文](#ラベル文)
+
+他のすべての文は終端ではない．
+
+リストが空でなく，その最後の非空文が終端である場合，
+[文リスト](#ブロック)は，終端文で終了する．
+
+## 空文
+
+空文 (empty statement) は何もしない．
+
+```
+EmptyStmt = .
+```
+
+## ラベル文
+
+ラベル文 (labeled statement)は，
+`goto`文，`break`文，`continue`文のターゲットになる．
+
+## 式文 (expression statements)
+
+特定のビルトイン関数を除いて，
+関数[呼び出し](#呼び出し)とメソッド呼び出しと[受信演算](#受信演算子)は，
+文コンテキストに現れうる．
+そのような文は，丸括弧で囲まれている場合がある．
+
+```
+ExpressionStmt = Expression .
+```
+
+以下のビルトイン関数は，文コンテキスト内では使用できない．
+
+```
+append cap complex imag len make new real
+unsafe.Alignof unsafe.Offsetof unsafe.Sizeof
+```
+
+```go
+h(x+y)
+f.Close()
+<-ch
+(<-ch)
+len("foo")  // len がビルトイン関数である場合は不正
+```
 
