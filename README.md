@@ -3,12 +3,11 @@ Go プログラミング言語仕様
 
 [![Build Status](https://travis-ci.org/hiwane/gospec-ja.svg?branch=master)](https://travis-ci.org/hiwane/gospec-ja)
 
-- The Go Programming Language Specification version 2020/01/14
-- [https://golang.org/ref/spec](https://golang.org/ref/spec) のなんちゃって日本語訳
+本文書は，[The Go Programming Language Specification](https://golang.org/ref/spec) version 2020/01/14 のなんちゃって日本語訳である．
+
 - https://github.com/golang/go/blob/master/doc/go_spec.html
 - [https://github.com/hiwane/gospec-ja](https://github.com/hiwane/gospec-ja)
 - https://hiwane.github.io/gospec-ja/
-- @ はこなれていない．どうすんべ
 
 訳注
 - valid/invalid は有効/無効, legal/illegal は正当/不当と訳す．
@@ -23,6 +22,7 @@ Go プログラミング言語仕様
 - else branch... else節, else枝...  case節 case枝 section 節
 - defined type / type definition
 - 符号位置 code point
+- @ はこなれていない．どうすんべ
 
 # 目次
 
@@ -538,7 +538,7 @@ ASCII テキストとしてエンコードできる．
 異なる有効範囲をもつ．
 8進エスケープは 0 から 255 までの値を表さなければならない．
 16進エスケープは，構成からこの条件を満足する．
-'\u' と '\U' のエスケープは Unicode 符号位置を表現するので，
+`'\u'` と `'\U'` のエスケープは Unicode 符号位置を表現するので，
 一部の値，特に `0x10FFFF` より大きな値とサロゲートハーフたちは不当 (illegal) である．
 
 
