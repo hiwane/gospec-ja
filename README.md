@@ -6,11 +6,11 @@ Go プログラミング言語仕様
 本文書は，[The Go Programming Language Specification](https://golang.org/ref/spec) version 2020/01/14 のなんちゃって日本語訳である．
 
 - https://github.com/golang/go/blob/master/doc/go_spec.html
-- [https://github.com/hiwane/gospec-ja](https://github.com/hiwane/gospec-ja)
+- [https://github.com/hiwane/gospec-ja](https://github.com/hiwane/gospec-ja) 誤訳・誤字脱字などは [issue](https://github.com/hiwane/gospec-ja/issues) か [PR](https://github.com/hiwane/gospec-ja/pulls) で
 - https://hiwane.github.io/gospec-ja/
 
 訳注
-- valid/invalid は有効/無効, legal/illegal は正当/不当と訳す．
+- valid/invalid は有効/無効, legal/illegal は正当/不当と訳す． (まだ不正が残っている)
 - letter と character を区別するため，letter は英字，character は文字と訳す．
 - signed/unsigned 符号付き，符号なし
 - source code と source text
@@ -3702,10 +3702,10 @@ float64(-1e-1000)        // 型 float64 の 0.0
 string('x')              // 型 string の "x"
 string(0x266c)           // 型 string の "♬"
 MyString("foo" + "bar")  // 型 MyString の "foobar"
-string([]byte{'a'})      // not a constant: []byte{'a'} is not a constant
-(*int)(nil)              // not a constant: nil is not a constant, *int is not a boolean, numeric, or string type
-int(1.2)                 // illegal: 1.2 cannot be represented as an int
-string(65.0)             // illegal: 65.0 is not an integer constant @@skip
+string([]byte{'a'})      // 定数ではない: []byte{'a'} は定数ではない
+(*int)(nil)              // 定数ではない: nil は定数ではない, *int はブール型，数値型，文字列型ではない
+int(1.2)                 // 不当: 1.2 は int で表現不可能
+string(65.0)             // 不当: 65.0 は整数定数で表現不可能
 ```
 
  非定数値 `x` は，以下のいずれの場合でも型 `T` に変換できる
