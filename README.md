@@ -5,12 +5,12 @@ Go プログラミング言語仕様
 
 本文書は，[The Go Programming Language Specification](https://golang.org/ref/spec) version 2020/01/14 のなんちゃって日本語訳である．
 
-- https://github.com/golang/go/blob/master/doc/go_spec.html
-- [https://github.com/hiwane/gospec-ja](https://github.com/hiwane/gospec-ja) 誤訳・誤字脱字などは [issue](https://github.com/hiwane/gospec-ja/issues) か [PR](https://github.com/hiwane/gospec-ja/pulls) で
+- 原文ソース：https://github.com/golang/go/blob/master/doc/go_spec.html
+- 訳文ソース：[https://github.com/hiwane/gospec-ja](https://github.com/hiwane/gospec-ja)．誤訳・誤字脱字などは [issue](https://github.com/hiwane/gospec-ja/issues) か [プルリク](https://github.com/hiwane/gospec-ja/pulls) で
 - https://hiwane.github.io/gospec-ja/
 
 訳注
-- valid/invalid は有効/無効, legal/illegal は正当/不当と訳す． (まだ不正が残っている)
+- valid/invalid は有効/無効, legal/illegal は正当/不当と訳す．
 - letter と character を区別するため，letter は英字，character は文字と訳す．
 - signed/unsigned 符号付き，符号なし
 - source code と source text
@@ -22,7 +22,7 @@ Go プログラミング言語仕様
 - else branch... else節, else枝...  case節 case枝 section 節
 - defined type / type definition
 - 符号位置 code point
-- @ はこなれていない．どうすんべ
+- @@@ はこなれていない．どうすんべ
 
 # 目次
 
@@ -791,7 +791,7 @@ x = v              // x 値 (*T)(nil) であり，動的な方 *T をもつ
 **型名** (type name) を示し，
 それが
 既存の型から構成される**型リテラル** (type literal) を使って
-指定されることがある． @@
+指定されることがある． @@@
 
 ```
 Type      = TypeName | TypeLit | "(" Type ")" .
@@ -2044,7 +2044,7 @@ var n = nil            // 不当
 コンパイラは，
 [関数本体](#関数宣言)内で宣言された変数が，
 関数内で使用されない場合，
-不正とすることがある．
+不当とすることがある．
 
 
 ## 簡潔な変数宣言
@@ -2085,7 +2085,7 @@ _, y, _ := coord(p)   // coord() は 3 つの値を返す; しかし， y 軸に
 ```go
 field1, offset := nextField(str, 0)
 field2, offset := nextField(str, offset)  // オフセットを再宣言する
-a, a := 1, 2                              // 不正: a が他の場所で宣言されている場合，a の二重宣言または新規変数なし
+a, a := 1, 2                              // 不当: a が他の場所で宣言されている場合，a の二重宣言または新規変数なし
 ```
 
 簡潔な変数宣言は，関数内でのみ現れる．
@@ -2544,7 +2544,7 @@ x.f
    フィールドを示す (しかし，メソッドではない）
    有効なセレクタ式である場合，
    `x.f` は `(*x).f` の省略形である．
-4. 他のすべての場合で，`x.f` は不正である．
+4. 他のすべての場合で，`x.f` は不当である．
 5. `x` がポインター型であり，値 `nil` を持ち，
    `x.f` が構造体フィールドを表すとき，
    `x.f` への代入や，`x.f` の評価は，
@@ -2692,7 +2692,7 @@ func(tv *T, a int) int
 最後のケースである，
 ポインターレシーバーメソッドのための値レシーバー関数は，
 ポインターレシーバーメソッドは値型のメソッド集合に属しないので，
-不正である．
+不当である．
 
 メソッドから派生した関数値は
 関数呼び出し構文で呼び出される．
@@ -2702,7 +2702,7 @@ func(tv *T, a int) int
 レシーバーをバインドする関数の構築には，
 [関数リテラル](#関数リテラル)か[メソッド値](#メソッド値)を使用する．
 
-インターフェース型のメソッドの関数値を派生させることは不正である．
+インターフェース型のメソッドの関数値を派生させることは正当である．
 結果となる関数は，インターフェース型の明示的なレシーバをとる．
 
 
@@ -2851,7 +2851,7 @@ a[x]
 - マップが `nil` であるか，エントリーを持たない場合，
 `a[x]` は `M` の要素型の[ゼロ値](#ゼロ値)である．
 
-上記以外の場合，`a[x]` は不正である．
+上記以外の場合，`a[x]` は不当である．
 
 [代入](#代入)や初期化で使用される
 型 `map[K]V` のマップ `a` のインデックス式
@@ -3047,7 +3047,7 @@ i := x.(int)                   // i は型 int を持ち，値 7
 type I interface { m() }
 
 func f(y I) {
-	s := y.(string)        // 不正: string は I を実装しない (メソッド m がない)
+	s := y.(string)        // 不当: string は I を実装しない (メソッド m がない)
 	r := y.(io.Reader)     // r は型 io.Reader を持ち， y の動的な型は I と io.Reader の両方を実装しなければならない
 	…
 }
@@ -3240,11 +3240,11 @@ var k = uint64(1<<s)          // 1 は型 uint64 をもつ; k == 1<<33
 var m int = 1.0<<s            // 1.0 は型 int をもつ; 型なし int が 32bit の場合 m == 0
 var n = 1.0<<s == j           // 1.0 は型 int32 をもつ; n == true
 var o = 1<<s == 2<<s          // 1 と 2 は型 type int をもつ; 型なし int が 32bit の場合 o == true
-var p = 1<<s == 1<<33         // int が 32bit の場合は不正: 1 は型 int をもつが，1<<33 はオーバーフローする
-var u = 1.0<<s                // 不正: 1.0 は型 float64, シフトできない
-var u1 = 1.0<<s != 0          // 不正: 1.0 は型 float64, シフトできない
-var u2 = 1<<s != 1.0          // 不正: 1 は型 float64, シフトできない
-var v float32 = 1<<s          // 不正: 1 は型 float32, シフトできない
+var p = 1<<s == 1<<33         // int が 32bit の場合は不当: 1 は型 int をもつが，1<<33 はオーバーフローする
+var u = 1.0<<s                // 不当: 1.0 は型 float64, シフトできない
+var u1 = 1.0<<s != 0          // 不当: 1.0 は型 float64, シフトできない
+var u2 = 1<<s != 1.0          // 不当: 1 は型 float64, シフトできない
+var v float32 = 1<<s          // 不当: 1 は型 float32, シフトできない
 var w int64 = 1.0<<33         // 1.0<<33 は定数シフト式
 var x = a[1.0<<s]             // 1.0 は型 int; 型なし int が 32bit の場合 x == a[0]
 var a = make([]byte, 1.0<<s)  // 1.0 は型 int; 型なし int が 32bit の場合 len(a) == 0
@@ -3883,8 +3883,8 @@ const Θ float64 = 3/2      // Θ == 1.0   (型 float64, 3/2 は整数除算)
 const Π float64 = 3/2.     // Π == 1.5   (型 float64, 3/2. は浮動小数除算)
 const d = 1 << 3.0         // d == 8     (型なし整数定数)
 const e = 1.0 << 3         // e == 8     (型なし整数定数)
-const f = int32(1) << 33   // 不正       (定数 8589934592 は int32 でオーバーフローする)
-const g = float64(2) >> 1  // 不正       (float64(2) は型付き浮動小数定数)
+const f = int32(1) << 33   // 不当       (定数 8589934592 は int32 でオーバーフローする)
+const g = float64(2) >> 1  // 不当       (float64(2) は型付き浮動小数定数)
 const h = "foo" > "bar"    // h == true  (型なしブール定数)
 const j = true             // j == true  (型なしブール定数)
 const k = 'w' + 1          // k == 'x'   (型なしルーン定数)
@@ -3921,7 +3921,7 @@ const Four int8 = Huge >> 98  // Four == 4                                (型 i
 定数除算や剰余演算の除数はゼロであってはならない：
 
 ```
-3.14 / 0.0   // 不正：0 による除算
+3.14 / 0.0   // 不当：0 による除算
 ```
 
 型付き定数の値は，
@@ -3944,7 +3944,7 @@ Four * 100   // 積 400 は (Four の型である) int8 で表現できない
 
 ```go
 ^1         // 型なし整数定数で， -2 と等しい
-uint8(^1)  // 不正: uint8(-2) と同じ，-2 は uint8 で表現できない
+uint8(^1)  // 不当: uint8(-2) と同じ，-2 は uint8 で表現できない
 ^uint8(1)  // 型 uint8 定数, 0xFF ^ uint8(1) = uint8(0xFE) と同じ
 int8(^1)   // int8(-2) と同じ
 ^int8(1)   // -1 ^ int8(1) = -2 と同じ
@@ -4099,7 +4099,7 @@ h(x+y)
 f.Close()
 <-ch
 (<-ch)
-len("foo")  // len がビルトイン関数である場合は不正
+len("foo")  // len がビルトイン関数である場合は不当
 ```
 
 ## 送信文
@@ -4818,7 +4818,7 @@ default:
 
 for {  // c にビットのランダム列を送信する
 	select {
-	case c <- 0:  // note: no statement, no fallthrough, no folding of cases@@
+	case c <- 0:  // note: no statement, no fallthrough, no folding of cases@@@ skip
 	case c <- 1:
 	}
 }
@@ -5226,8 +5226,8 @@ make(T, n)       チャンネル   型 T, バッファサイズ n のバッフ�
 ```go
 s := make([]int, 10, 100)       // スライス len(s) == 10, cap(s) == 100
 s := make([]int, 1e3)           // スライス len(s) == cap(s) == 1000
-s := make([]int, 1<<63)         // 不正: len(s) が型 int で表現不可能
-s := make([]int, 10, 0)         // 不正: len(s) > cap(s)
+s := make([]int, 1<<63)         // 不当: len(s) が型 int で表現不可能
+s := make([]int, 10, 0)         // 不当: len(s) > cap(s)
 c := make(chan int, 10)         // バッファサイズ 10 のチャンネル
 m := make(map[string]int, 100)  // 約 100 要素の初期スペースをもつマップ
 ```
@@ -5289,8 +5289,10 @@ b = append(b, "bar"...)            // 文字列を追加                b == []b
 [同一](#型の一意性)の要素型 `T` を持たねばならず，
 型 `[]T` のスライスへ[代入可能](#代入可能性)でなければならない．
 コピーされた要素の数は，`len(src)` と `len(dst)` の最小値である．
-特別な場合として，`copy` は，
-`copy` は... @@@
+特別な場合として，
+`copy` は，
+文字列型のコピー元引数（訳注：`src`）を
+`[]byte` 型のコピー先引数（訳注: `dst`）への代入を受け入れる．
 この形式では，文字列から，`byte` スライスへバイトをコピーする．
 
 
@@ -5375,11 +5377,11 @@ const b = complex(1.0, -1.4)       // 型なし複素数定数 1 - 1.4i
 x := float32(math.Cos(math.Pi/2))  // float32
 var c64 = complex(5, -x)           // complex64
 var s int = complex(1, 0)          // 型なし複素数定数 1 + 0i は int に変換できる
-_ = complex(1, 2<<s)               // 不正: 2 は浮動小数点型となり，シフトできない
+_ = complex(1, 2<<s)               // 不当: 2 は浮動小数点型となり，シフトできない
 var rl = real(c64)                 // float32
 var im = imag(a)                   // float64
 const c = imag(b)                  // 型なし定数 -1.4
-_ = imag(3 << s)                   // 不正: 3 は複素数型となり，シフトできない
+_ = imag(3 << s)                   // 不当: 3 は複素数型となり，シフトできない
 ```
 
 ## パニックの対処
@@ -5476,7 +5478,10 @@ println    print ににているが，引数の間にスペースと，最後に
 # パッケージ
 
 Go プログラムは，**パッケージ** (package) をリンクすることによって構築される．
-パッケージは， @@@
+パッケージは，
+パッケージに属する定数，型，変数，関数を宣言し，
+同じパッケージのすべてのファイルからアクセス可能な
+1 つ以上のソースファイルから構築される．
 これらの要素は，
 [エクスポート](#エクスポートされた識別子)され，
 他のパッケージで使用される．
@@ -5579,9 +5584,9 @@ import . "lib/math"         Sin
 
 インポート宣言は，
 インポートしたパッケージとインポートされたパッケージの間の依存関係を宣言する．
-直接的でも，間接的でも， パッケージが自分自身をインポートすることは不正であり，
+直接的でも，間接的でも， パッケージが自分自身をインポートすることは不当であり，
 パッケージがエクスポートした識別子を参照しないのに，
-直接的にそのパッケージをインポートするのは不正である．
+直接的にそのパッケージをインポートするのは不当である．
 副作用 (初期化) のみを目的としてパッケージをインポートする場合は，
 暗黙的なパッケージ名として[ブランク](#ブランク識別子)識別子を使用する．
 
@@ -5599,27 +5604,27 @@ package main
 
 import "fmt"
 
-// Send the sequence 2, 3, 4, … to channel 'ch'. @@skip
+// チャンネル 'ch' に列 2, 3, 4, … を送信
 func generate(ch chan<- int) {
 	for i := 2; ; i++ {
 		ch <- i  // Send 'i' to channel 'ch'.
 	}
 }
 
-// Copy the values from channel 'src' to channel 'dst',
-// removing those divisible by 'prime'.
+// 'prime' で割り切れる数を削除しながら，
+// チャンネル 'src' からチャンネル 'dst' へ値をコピーする
 func filter(src <-chan int, dst chan<- int, prime int) {
-	for i := range src {  // Loop over values received from 'src'.
+	for i := range src {  // 'src' から受け取った値を繰り返す
 		if i%prime != 0 {
-			dst <- i  // Send 'i' to channel 'dst'.
+			dst <- i  // 'i' をチャンネル 'dst' へ送信
 		}
 	}
 }
 
-// The prime sieve: Daisy-chain filter processes together.
+// エラトステネスの篩: デイジーチェインフィルターも一緒に処理する
 func sieve() {
-	ch := make(chan int)  // Create a new channel.
-	go generate(ch)       // Start generate() as a subprocess.
+	ch := make(chan int)  // 新しいチャンネルの生成
+	go generate(ch)       // サブプロセスとして generate() を開始
 	for {
 		prime := <-ch
 		fmt.Print(prime, "\n")
@@ -5710,7 +5715,7 @@ var t T
 すべての変数が未初期化のままである場合，
 この処理は終了する．
 これらの変数は，1 つ以上の初期化サイクルの一部であり，
-プログラムは不正である．
+プログラムは有効でない．
 
 右辺が
 単一で多値の式によって初期化される変数宣言の
@@ -5744,7 +5749,7 @@ var a, b = f() // a と b は x の初期化前に，同時に初期化される
 具体的には：
 
 - 変数か関数への参照は，その変数か関数を示す識別子である．
-- メソッド `m` への参照は，@@@
+- メソッド `m` への参照は，
 `t` の(静的な) 型がインターフェース型でない，
 形式 `t.m` の[メソッド値](#メソッド値)または[メソッド式](#メソッド式)であり，
 メソッド `m` は`t` の[メソッド集合](#メソッド集合)に属する．
@@ -5965,7 +5970,7 @@ uintptr(unsafe.Pointer(&s)) + unsafe.Offsetof(s.f) == uintptr(unsafe.Pointer(&s.
 ```
 
 コンピュータ・アーキテクチャは，
-Computer architectures may require memory addresses to be aligned; that is, for addresses of a variable to be a multiple of a factor, the variable's type's alignment. @@
+Computer architectures may require memory addresses to be aligned; that is, for addresses of a variable to be a multiple of a factor, the variable's type's alignment. @@@
 関数 `Alignof` は任意の型の変数を表す式を引数にとり，
 バイト単位で，変数の（型の）配置を返す．
 変数 `x` に対して，
