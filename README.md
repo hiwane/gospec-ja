@@ -22,8 +22,11 @@ Go プログラミング言語仕様
 - else branch... else節, else枝...  case節 case枝 section 節
 - defined type / type definition
 - 符号位置 code point
+- ジェネリクス型 generic type, ジェネリクス関数 generic function (複数で日本語化している？)
+- 制約を満たす，と，充足　で揺れがある.
 - @@@ はこなれていない．どうすんべ
 - now: 2 周目: リンクと**強調**: [表現可能性](#表現可能性)
+
 
 訳注：記号
 | 記号      | 日本語(本文)     | 英語(原文)           |
@@ -2335,8 +2338,8 @@ func (tz TimeZone) String() string {
 ```
 
 型定義が[型パラメーター](#型パラメーター宣言)を指定する場合，
-型名は，**汎用型** (generic type) を表す．
-汎用型は，使用時には，[インスタンス化](#インスタンス化)されなければならない．
+型名は，**ジェネリクス型** (generic type) を表す．
+ジェネリクス型は，使用時には，[インスタンス化](#インスタンス化)されなければならない．
 
 ```go
 type List[T any] struct {
@@ -2356,8 +2359,8 @@ func f[T any]() {
 }
 ```
 
-汎用型は，それに関連する[メソッド](#メソッド宣言)を持つこともできる．
-この場合には，メソッドレシーバーは，汎用型定義にあらわれるのと同じ数の型パラメーターを宣言しなければならない．
+ジェネリクス型は，それに関連する[メソッド](#メソッド宣言)を持つこともできる．
+この場合には，メソッドレシーバーは，ジェネリクス型定義にあらわれるのと同じ数の型パラメーターを宣言しなければならない．
 
 ```go
 // メソッド Len はリンクリスト l の要素の数を返す．
@@ -2368,7 +2371,7 @@ func (l *List[T]) Len() int  { … }
 ## 型パラメーター宣言
 
 型パラメーターリストは，
-汎用関数か型宣言の**型パラメーター**を宣言する．
+ジェネリクス関数か型宣言の**型パラメーター**を宣言する．
 型パラメーターリストは，
 型パラメータ名がすべて存在しなければならないことと，
 そのリストが丸括弧ではなく角括弧で囲まれることを除いて，
@@ -2386,7 +2389,7 @@ TypeParamDecl   = IdentifierList TypeConstraint .
 それは，宣言中の（まだ）知られていない型のプレースホルダーとして働く，
 新しい，別の[名前付き型](#型)です．
 型パラメーターは，
-汎用関数や型の[インスタンス](#インスタンス化)の際に，
+ジェネリクス関数や型の[インスタンス](#インスタンス化)の際に，
 **型引数**に置き換えられる．
 
 
@@ -2400,9 +2403,9 @@ TypeParamDecl   = IdentifierList TypeConstraint .
 
 通常の関数パラメーターにパラメーター型があるように，
 各型パラメーターは，対応する（メタ）型があり，
-その[型制約](#型制約)と呼ばれる．
+その[**型制約**](#型制約)と呼ばれる．
 
-ある汎用型に対する
+あるジェネリクス型に対する
 型パラメータリストが，
 テキスト `P C` が有効な式を形成するように
 制約 `C` で単一の型パラメーター `P` を宣言するとき，
@@ -2416,64 +2419,55 @@ type T[P *C|Q] …
 …
 ```
 
-<p>
-In these rare cases, the type parameter list is indistinguishable from an
-expression and the type declaration is parsed as an array type declaration.
-To resolve the ambiguity, embed the constraint in an
-<a href="#Interface_types">interface</a> or use a trailing comma:
-</p>
+このような稀なケースでは，
+型パラメータリストは，式と区別がつかず，
+型宣言は，配列型宣言として解析される．
+あいまいさを解消するには，
+その制約を[インターフェース](#インターフェース型)に埋め込むか，
+末尾のカンマを使用する：
 
-<pre>
-type T[P interface{*C}] …
-type T[P *C,] …
-</pre>
-
-<p>
-Type parameters may also be declared by the receiver specification
-of a <a href="#Method_declarations">method declaration</a> associated
-with a generic type.
-</p>
-
-<p>
-Within a type parameter list of a generic type <code>T</code>, a type constraint
-may not (directly, or indirectly through the type parameter list of another
-generic type) refer to <code>T</code>.
-</p>
 
 ```go
-type T1[P T1[P]] …                    // illegal: T1 refers to itself
-type T2[P interface{ T2[int] }] …     // illegal: T2 refers to itself
-type T3[P interface{ m(T3[int])}] …   // illegal: T3 refers to itself
-type T4[P T5[P]] …                    // illegal: T4 refers to T5 and
-type T5[P T4[P]] …                    //          T5 refers to T4
-
-type T6[P int] struct{ f *T6[P] }     // ok: reference to T6 is not in type parameter list
+type T[P interface{*C}] …
+type T[P *C,] …
 ```
 
+型パラメーターは，ジェネリクス型に関連する[メソッド宣言](#メソッド宣言)のレシーバー指定によって宣言することもできる．
+
+ジェネリクス型 `T` の型パラメータリスト内では，
+型制約は，(直接，または，別のジェネリクス型の型パラメーターリストを通して間接的に) `T` を参照してはならない．
+
+
+```go
+type T1[P T1[P]] …                    // 不当: T1 は自分自身を参照する
+type T2[P interface{ T2[int] }] …     // 不当: T2 は自分自身を参照する
+type T3[P interface{ m(T3[int])}] …   // 不当: T3 は自分自身を参照する
+type T4[P T5[P]] …                    // 不当: T4 は T5 を参照し，
+type T5[P T4[P]] …                    //          T5 は T4 を参照する
+
+type T6[P int] struct{ f *T6[P] }     // ok: T6 への参照が型パラメータ内ではない
+```
 
 ### 型制約
 
-<p>
-A <i>type constraint</i> is an <a href="#Interface_types">interface</a> that defines the
-set of permissible type arguments for the respective type parameter and controls the
-operations supported by values of that type parameter.
-</p>
+**型制約**は，
+それぞれの型パラメーターの許容される型引数の集合を定義し，
+その型パラメーターの値によってサポートされる操作を制御する
+[インターフェース](#インターフェース型)である．
 
-<pre class="ebnf">
+```ebnf
 TypeConstraint = TypeElem .
-</pre>
+```
 
-<p>
-If the constraint is an interface literal of the form <code>interface{E}</code> where
-<code>E</code> is an embedded <a href="#Interface_types">type element</a> (not a method), in a type parameter list
-the enclosing <code>interface{ … }</code> may be omitted for convenience:
-</p>
+型制約は，`interface{E}` の形のインターフェースリテラルであり，
+`E` が埋め込まれた[型要素](#インターフェース型) (メソッドではない) である場合，
+型パラメーターリストでは，それを囲う `interface { … }` が便宜上省略されることがある：
 
 ```go
 [T []P]                      // = [T interface{[]P}]
 [T ~int]                     // = [T interface{~int}]
 [T int|string]               // = [T interface{int|string}]
-type Constraint ~int         // illegal: ~int is not in a type parameter list
+type Constraint ~int         // 不当: ~int は型パラメーターリストではない
 ```
 
 <!--
@@ -2482,79 +2476,69 @@ elsewhere since we have a section that clearly defines how interfaces implement
 other interfaces based on their type sets. But this should get us going for now.
 -->
 
-<p>
-The <a href="#Predeclared_identifiers">predeclared</a>
-<a href="#Interface_types">interface type</a> <code>comparable</code>
-denotes the set of all non-interface types that are
-<a href="#Comparison_operators">strictly comparable</a>.
-</p>
+[事前宣言された](#事前宣言された識別子)[インターフェース型](#インターフェース型) `comparable` は
+[厳密に比較可能](#比較演算子) (strictly comparable) なすべての非インターフェース型の集合を示す．
 
-<p>
-Even though interfaces that are not type parameters are <a href="#Comparison_operators">comparable</a>,
-they are not strictly comparable and therefore they do not implement <code>comparable</code>.
-However, they <a href="#Satisfying_a_type_constraint">satisfy</a> <code>comparable</code>.
-</p>
+たとえ，型パラメーターでないインターフェースたちが[比較可能](#比較演算子)であるとしても，
+そのインターフェースたちは，厳密には比較可能ではないので，
+`comparable` を実装しない．
+しかしながら，
+それらは，`comparable` を[満たす](#型制約の充足)．
 
-<pre>
-int                          // implements comparable (int is strictly comparable)
-[]byte                       // does not implement comparable (slices cannot be compared)
-interface{}                  // does not implement comparable (see above)
-interface{ ~int | ~string }  // type parameter only: implements comparable (int, string types are stricly comparable)
-interface{ comparable }      // type parameter only: implements comparable (comparable implements itself)
-interface{ ~int | ~[]byte }  // type parameter only: does not implement comparable (slices are not comparable)
-interface{ ~struct{ any } }  // type parameter only: does not implement comparable (field any is not strictly comparable)
-</pre>
+```go
+int                          // comparable を実装する (int は厳密に比較可能)
+[]byte                       // comparable を実装しない (スライスを比較できない)
+interface{}                  // comparable を実装しない (上をみよ)
+interface{ ~int | ~string }  // 型パラメータのみ: comparable を実装 (int, string 型は厳密に比較可能)
+interface{ comparable }      // 型パラメータのみ: comparable を実装 (comparable はそれ自身を実装する)
+interface{ ~int | ~[]byte }  // 型パラメータのみ: comparable を実装しない (slices は比較できない)
+interface{ ~struct{ any } }  // 型パラメータのみ: comparable を実装しない (フィールド any は厳密に比較可能ではない)
+```
 
-<p>
-The <code>comparable</code> interface and interfaces that (directly or indirectly) embed
-<code>comparable</code> may only be used as type constraints. They cannot be the types of
-values or variables, or components of other, non-interface types.
-</p>
+`comparable` インターフェースと，`comparable` を（直接または間接的に）埋め込むインターフェースは
+型制約として使用できる．
+それらは，値や変数の型，
+他の非インターフェース型の構成要素になれない．
 
-### <h4 id="Satisfying_a_type_constraint">Satisfying a type constraint</h4>
 
-<p>
-A type argument <code>T</code><i> satisfies</i> a type constraint <code>C</code>
-if <code>T</code> is an element of the type set defined by <code>C</code>; i.e.,
-if <code>T</code> <a href="#Implementing_an_interface">implements</a> <code>C</code>.
-As an exception, a <a href="#Comparison_operators">strictly comparable</a>
-type constraint may also be satisfied by a <a href="#Comparison_operators">comparable</a>
-(not necessarily strictly comparable) type argument.
-More precisely:
-</p>
+### 型制約の充足
 
-<p>
-A type T <i>satisfies</i> a constraint <code>C</code> if
-</p>
 
-<ul>
-<li>
-	<code>T</code> <a href="#Implementing_an_interface">implements</a> <code>C</code>; or
-</li>
-<li>
-	<code>C</code> can be written in the form <code>interface{ comparable; E }</code>,
-	where <code>E</code> is a <a href="#Basic_interfaces">basic interface</a> and
-	<code>T</code> is <a href="#Comparison_operators">comparable</a> and implements <code>E</code>.
-</li>
-</ul>
+型引数 `T` が型制約 `C` によって定義される型集合の要素であるとき，
+型引数 `T` は，型制約 `C` を**満たす**;
+つまり，
+`T` が `C` を[実装する](#インターフェースの実装)．
+例外として，
+[厳密に比較可能な](#比較演算子)型制約は，
+[比較可能](#比較演算子)な (必ずしも厳密に比較可能ではない) 型引数によって
+満たされることがある．
+より詳細には：
 
-<pre>
-type argument      type constraint                // constraint satisfaction
+以下の場合，型 `T` は制約 `C` を**充足する**
 
-int                interface{ ~int }              // satisfied: int implements interface{ ~int }
-string             comparable                     // satisfied: string implements comparable (string is stricty comparable)
-[]byte             comparable                     // not satisfied: slices are not comparable
-any                interface{ comparable; int }   // not satisfied: any does not implement interface{ int }
-any                comparable                     // satisfied: any is comparable and implements the basic interface any
-struct{f any}      comparable                     // satisfied: struct{f any} is comparable and implements the basic interface any
-any                interface{ comparable; m() }   // not satisfied: any does not implement the basic interface interface{ m() }
-interface{ m() }   interface{ comparable; m() }   // satisfied: interface{ m() } is comparable and implements the basic interface interface{ m() }
-</pre>
+- `T` は `C` を[実装する](#インターフェースの実装); または
+- `C` は `interface{ comparable; E }` の形式で書くことができる.
+ここで，
+`E` は[基本インターフェース](#基本インターフェース)であり，
+`T` は[比較可能](#比較演算子)で，`E` を実装する．
 
-<p>
-Because of the exception in the constraint satisfaction rule, comparing operands of type parameter type
-may panic at run-time (even though comparable type parameters are always strictly comparable).
-</p>
+```go
+type argument      type constraint                // 制約を充足
+
+int                interface{ ~int }              // 充足する: int は interface{ ~int } を実装する
+string             comparable                     // 充足する: string は comparable を実装する (string は厳密に比較可能)
+[]byte             comparable                     // 充足しない: スライスは比較可能でない
+any                interface{ comparable; int }   // 充足しない: any は interface{ int } を実装しない
+any                comparable                     // 充足する: any は comparable で， 基本インターフェース any を実装する
+struct{f any}      comparable                     // 充足する: struct{f any} は comparable で，基本インターフェース any を実装する
+any                interface{ comparable; m() }   // 充足しない: any は基本インターフェース interface{ m() } を実装しない
+interface{ m() }   interface{ comparable; m() }   // 充足する: interface{ m() } は　comparable であり，基本インターフェース interface{ m() } を実装する
+```
+
+制約充足のルールにおいて例外があるため，
+型パラメータ型の比較オペランドは
+（比較可能な型パラメーターがいつでも厳密に比較可能であるにもかかわらず）
+ランタイムパニックになる場合がある.
 
 ## 変数宣言
 
@@ -2582,7 +2566,7 @@ var _, found = entries[name]  // マップ検索; "found" にのみ興味があ�
 ```
 
 式のリスト (`ExpressionList`) が与えられたら，
-変数は以下の[代入](#代入文)規則に従った式によって初期化される．
+変数は以下の[代入文](#代入文)規則に従った式によって初期化される．
 そうでなければ，各変数は[ゼロ値](#ゼロ値)で初期化される．
 
 型が指定されると，変数はその型になる．
@@ -2618,7 +2602,7 @@ ShortVarDecl = IdentifierList ":=" ExpressionList .
 これは，初期値があるが型がない通常の[変数宣言](#変数宣言)の省略形である．
 
 ```
-"var" IdentifierList = ExpressionList .
+"var" IdentifierList "=" ExpressionList .
 ```
 
 ```go
@@ -2640,12 +2624,14 @@ _, y, _ := coord(p)   // coord() は 3 つの値を返す; しかし， y 軸に
 結果として，再宣言は多値の簡潔な変数宣言においてのみ使用される．
 再宣言では新しい変数は導入されず，
 新しい値が元の変数に代入される．
+`:=` の左辺の非ブランクな変数名は，
+[一意](#識別子の一意性)でなければならない．
 
 
 ```go
 field1, offset := nextField(str, 0)
 field2, offset := nextField(str, offset)  // オフセットを再宣言する
-a, a := 1, 2                              // 不当: a が他の場所で宣言されている場合，a の二重宣言または新規変数なし
+x, y, x := 1, 2, 3                        // 不当: x は := の左辺で繰り返されている
 ```
 
 簡潔な変数宣言は，関数内でのみ現れる．
@@ -2657,12 +2643,17 @@ a, a := 1, 2                              // 不当: a が他の場所で宣言�
 
 ## 関数宣言
 
+<!--
+関数の重要性を考えると，このセクションはいつも，未整備のままである．
+ここを拡張することは nice だと思う
+-->
+
 関数宣言 (function declaration; `FunctionDecl`) は
 **関数名** (function name) である識別子に，
 関数をバインドする．
 
 ```
-FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
+FunctionDecl = "func" FunctionName [ TypeParameters ] Signature [ FunctionBody ] .
 FunctionName = identifier .
 FunctionBody = Block .
 ```
@@ -2683,19 +2674,25 @@ func IndexRune(s string, r rune) int {
 }
 ```
 
-関数は，その本体なしで宣言される場合がある．
-そのような宣言は，
-アセンブリルーチン (assembly routine) のように
-Go の外で実装された関数のシグネチャーを提供する．
+関数宣言が[型パラメーター](#型パラメーター宣言)を指定する場合，
+関数名は**ジェネリクス関数**を表す．
+ジェネリクス関数は，
+それが呼び出されたり，値として使用される前に
+[インスタンス化](#インスタンス化)しなければならない．
 
 ```go
-func min(x int, y int) int {
+func min[T ~int|~float64](x, y T) T {
 	if x < y {
 		return x
 	}
 	return y
 }
+```
 
+型パラメーターのない関数宣言は，本体を省略できる．
+そのような宣言は，アセンブリルーチンのような Go の外で実装された関数のシグネチャーを提供する．
+
+```go
 func flushICache(begin, end uintptr)  // 外部で実装される
 ```
 
@@ -2713,9 +2710,11 @@ Receiver   = Parameters .
 ```
 
 レシーバーは，メソッド名の前にある追加のパラメーター節で指定される．
-そのパラメーター節は，ひとつの不可変数引数で，そのレシーバーを宣言する．
+そのパラメーター節は，ひとつの非可変長パラメーターで，そのレシーバーを宣言しなければならない．
 その型は，[定義](#型定義)型 `T`，または，定義型 `T`
-へのポインターでなければならない．
+へのポインターでなければならず，
+場合によっては，
+角括弧で囲まれた型パラメータ名 `[P1, P2, …]` のリストがそれに続く．
 `T` はレシーバー**基本型** (base type)と呼ばれる．
 レシーバー基本型は，ポインター型またはインターフェース型にはできず，
 メソッドとして，同じパッケージ内で定義されなければならない．
@@ -2748,15 +2747,32 @@ func (p *Point) Scale(factor float64) {
 
 は，(レシーバー型 `*Point` の) メソッド `Length` と `Scale` を基本型 `Point` にバインドする．
 
-メソッドの型は，
-最初の引数をそのレシーバーとする関数の型である．
-例えば，メソッド `Scale` は次の型をもつ．
+レシーバーの基本型が[ジェネリクス型](#型宣言)である場合，
+レシーバーの仕様は，使用するメソッドに対応する型パラメータを宣言しなければならない．
+これにより，そのレシーバーの型パラメーターはメソッドで使用可能となる．
+構文的には，
+型パラメーター宣言は
+レシーバーの基本型の[インスタンス化](#インスタンス化)のようにみえる:
+型引数は，宣言される型パラメーターを示す識別子でなければならず，
+型引数は，レシーバー基本型の型パラメーター毎にひとつずつ指定する．
+型パラメータ名たちは，
+レシーバーの基本型の定義内の対応するパラメーターと一致する必要はなく，
+すべての非ブランクなパラメーター名は，
+レシーバーパラメータ節とメソッドシグネチャー内で一意でなければならない．
+レシーバーの型パラメーター制約は，
+レシーバーの基本型定義によって暗示される：
+対応する型パラメーターは対応する制約をもつ．
+
 
 ```go
-func(p *Point, factor float64)
-```
+type Pair[A, B any] struct {
+	a A
+	b B
+}
 
-しかしながら，この方法で宣言された関数はメソッドではない．
+func (p Pair[A, B]) Swap() Pair[B, A]  { … }  // レシーバーが A, B を宣言する
+func (p Pair[First, _]) First() First  { … }  // レシーバーが First を宣言し, Pair の A に対応する
+```
 
 # 式
 
@@ -2775,18 +2791,28 @@ func(p *Point, factor float64)
 非[ブランク](#ブランク識別子)な識別子，または，
 丸括弧で囲まれた式である．
 
-[ブランク](#ブランク識別子)は[代入](#代入)の左辺においてのみオペランドとして現れる．
-
 ```
-Operand     = Literal | OperandName | "(" Expression ")" .
+Operand     = Literal | OperandName [ TypeArgs ] | "(" Expression ")" .
 Literal     = BasicLit | CompositeLit | FunctionLit .
 BasicLit    = int_lit | float_lit | imaginary_lit | rune_lit | string_lit .
 OperandName = identifier | QualifiedIdent .
 ```
 
+[ジェネリクス関数](#関数宣言)を示すオペランド名の後に，
+[型引数](#インスタンス化)のリストを続けることができる．
+結果として得られるオペランドは，[インスタンス化された](#インスタンス化)関数である．
+
+[ブランク](#ブランク識別子)は[代入式](#代入式)の左辺においてのみオペランドとして現れる．
+
+実装上の制限：
+オペランドの型が空の[型集合](#インターフェース型)を持つ[型パラメーター](#型パラメーター宣言)である場合，
+コンパイラはエラーを報告する必要はない．
+そのような型パラメーターをもつ関数は，[インスタンス化](#インスタンス化)できない;
+インスタンス化の際にエラーになる．
+
 ## 修飾識別子
 
-修飾識別子 (qualified identifier) はパッケージ名を前頭において修飾された識別子である．
+**修飾識別子** (qualified identifier) はパッケージ名を前頭において修飾された識別子である．
 パッケージ名と識別子はどちらも[ブランク](#ブランク識別子)にできない．
 
 ```
@@ -2800,7 +2826,7 @@ QualifiedIdent = PackageName "." identifier .
 そのパッケージの[パッケージブロック](#ブロック)で宣言されていなければならない．
 
 ```
-math.Sin	// パッケージ math の Sin 関数を示す
+math.Sin // パッケージ math の Sin 関数を示す
 ```
 
 ## 複合リテラル
@@ -4679,7 +4705,7 @@ x++                 x += 1
 x--                 x -= 1
 ```
 
-## 代入
+## 代入文
 
 ```
 Assignment = ExpressionList assign_op ExpressionList .
@@ -5188,7 +5214,7 @@ Unicode 符号位置を反復する．
 チャンネル `nil` の場合，範囲式は永久にブロックされる．
 
 
-反復値は，[代入文](#代入)における反復変数に代入される．
+反復値は，[代入文](#代入文)における反復変数に代入される．
 
 反復変数は，
 [簡潔な変数宣言](#簡潔な変数宣言) (`:=`) の形式を使って，
