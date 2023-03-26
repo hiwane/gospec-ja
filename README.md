@@ -59,7 +59,6 @@ Go プログラミング言語仕様
 - [定数](#定数)
 - [変数](#変数)
 - [型](#型)
-  - [メソッド集合](#メソッド集合)
   - [ブール型](#ブール型)
   - [数値型](#数値型)
   - [文字列型](#文字列型)
@@ -68,13 +67,20 @@ Go プログラミング言語仕様
   - [構造体型](#構造体型)
   - [ポインター型](#ポインター型)
   - [関数型](#関数型)
-- [インターフェース型](#インターフェース型)
+  - [インターフェース型](#インターフェース型)
+    - [基本インターフェース](#基本インターフェース)
+    - [埋め込みインターフェース](#埋め込みインターフェース)
+    - [一般インターフェース](#一般インターフェース)
+    - [インターフェースの実装](#インターフェースの実装)
   - [マップ型](#マップ型)
   - [チャンネル型](#チャンネル型)
 - [型と値の性質](#型と値の性質)
+  - [基底型](#基底型)
+  - [コア型](#コア型)
   - [型の一意性](#型の一意性)
   - [代入可能性](#代入可能性)
   - [表現可能性](#表現可能性)
+  - [メソッド集合](#メソッド集合)
 - [ブロック](#ブロック)
 - [宣言とスコープ](#宣言とスコープ)
   - [ラベルスコープ](#ラベルスコープ)
@@ -85,6 +91,7 @@ Go プログラミング言語仕様
   - [定数宣言](#定数宣言)
   - [`iota`](#iota)
   - [型宣言](#型宣言)
+  - [型パラメーター宣言](#型パラメーター宣言)
   - [変数宣言](#変数宣言)
   - [簡潔な変数宣言](#簡潔な変数宣言)
   - [関数宣言](#関数宣言)
@@ -103,6 +110,8 @@ Go プログラミング言語仕様
   - [型アサーション](#型アサーション)
   - [呼び出し](#呼び出し)
   - [引数に `...` パラメーターを渡す](#passing_arg_to_params)
+  - [インスタンス化](#インスタンス化)
+  - [型推論](#型推論)
   - [演算子](#演算子)
   - [算術演算子](#算術演算子)
   - [比較演算子](#比較演算子)
@@ -119,7 +128,7 @@ Go プログラミング言語仕様
   - [式文](#式文)
   - [送信文](#送信文)
   - [インクリメント文，デクリメント文](#incdec)
-  - [代入](#代入)
+  - [代入式](#代入式)
   - [`if` 文](#if文)
   - [`switch` 文](#switch文)
   - [`for` 文](#for文)
@@ -265,7 +274,7 @@ Go は，英字カテゴリの `Lu`, `Ll`, `Lt`, `Lm`, `Lo` に属するすべ�
 アンダースコア文字 `_` (`U+005F`) は，
 小文字 (letter) として考える．
 
-```
+```ebnf
 letter        = unicode_letter | "_" .
 decimal_digit = "0" … "9" .
 binary_digit  = "0" | "1" .
@@ -329,12 +338,12 @@ Goプログラムでは，次の 2 つの規則を利用して，多くの場合
 識別子は，1 つ以上の英字 (letter) と数字 (digit) の列である．
 識別子は，英字から始まらなければならない．
 
-```
+```ebnf
 identifier = letter { letter | unicode_digit } .
 ```
 
 ```go
-a
+式a
 _x9
 ThisVariableIsExported
 αβ
@@ -388,7 +397,7 @@ continue     for          import       return       var
 アンダースコア `_` が接頭辞の後ろ，または，続く数字との間に使用される場合がある．
 このアンダースコアは，リテラルの値を変更しない．
 
-```
+```ebnf
 int_lit        = decimal_lit | binary_lit | octal_lit | hex_lit .
 decimal_lit    = "0" | ( "1" … "9" ) [ [ "_" ] decimal_digits ] .
 binary_lit     = "0" ( "b" | "B" ) [ "_" ] binary_digits .
@@ -446,7 +455,7 @@ _42         // 整数リテラルではなく，識別子
 このアンダースコアは，リテラルの値を変更しない．
 
 
-```
+```ebnf
 float_lit         = decimal_float_lit | hex_float_lit .
 
 decimal_float_lit = decimal_digits "." [ decimal_digits ] [ decimal_exponent ] |
@@ -497,7 +506,7 @@ hex_exponent      = ( "p" | "P" ) [ "+" | "-" ] decimal_digits .
 虚数リテラルは，[整数リテラル](#整数リテラル)または[浮動小数点リテラル](#浮動小数点リテラル)と，その後ろに続く小文字英字 `i` から成る．
 虚数リテラルの値は，それぞれ，整数リテラルまたは浮動小数点リテラルに虚数単位 `i` を乗じた値である．
 
-```
+```ebnf
 imaginary_lit = (decimal_digits | int_lit | float_lit) "i" .
 ```
 
@@ -577,7 +586,7 @@ Unicode 符号位置を表現するので，
 
 ルーリテラルのバックスラッシュに続く認識できない文字は，不当である．
 
-```
+```ebnf
 rune_lit         = "'" ( unicode_value | byte_value ) "'" .
 unicode_value    = unicode_char | little_u_value | big_u_value | escaped_char .
 byte_value       = octal_byte_value | hex_byte_value .
@@ -813,12 +822,12 @@ x = v              // x 値 (*T)(nil) であり，動的な方 *T をもつ
 それらの値に対応する演算やメソッドを決定する．
 型は，
 型名がある場合は**型名** (type name) で表され，
-その型がジェネリクスである場合は，[型引数](型引数)がそれに続かなければならない．
+その型がジェネリクスである場合は，[型引数](#インスタンス化)がそれに続かなければならない．
 型は，
 既存の型から型を構成する**型リテラル** (type literal) を使って
 指定することもできる．
 
-```
+```ebnf
 Type      = TypeName | TypeLit | "(" Type ")" .
 TypeName  = identifier | QualifiedIdent .
 TypeLit   = ArrayType | StructType | PointerType | FunctionType | InterfaceType |
@@ -859,31 +868,6 @@ type (
 
 `A1`, `A2`, `B1`, `B2` の基底型は文字列型である．
 `[]B1`, `B3`, `B4` の基底型は `[]B1` である．
-
-
-訳注：本家のままだが，`[]B1` は必要?
-
-## メソッド集合
-
-型は，
-型に関連付けられた**メソッド集合** (method set)がある場合がある．
-[インターフェース型](#インターフェース型) (interface type) のメソッド集合は，そのインターフェース自身である．
-それ以外の型 `T` のメソッド集合は，
-レシーバー型 (receiver type) `T` で宣言されたすべての[メソッド](#メソッド宣言)で構成される．
-[ポインター型](#ポインター型) `*T` に対応するメソッド集合は，
-レシーバー `*T` もしくは `T` で宣言されたすべてのメソッド集合である．
-(つまり，それは `T` のメソッド集合もまた，含む．)
-[構造体型](#構造体型)の章で説明しているように，
-埋め込みフィールドを含む構造体にさらなる規則が適用される．
-それ以外の型は，空のメソッド集合をもつ．
-メソッド集合において，
-それぞれのメソッドは[一意](#識別子の一意性)で，
-[ブランク](#ブランク識別子)でない[メソッド名](#インターフェース型)を持たなければならない (MUST)．
-
-ある型のメソッド集合は，
-その型が[実装する](#インターフェース型)インターフェースと，
-その型のレシーバーを用いて[呼び出す](#呼び出し)ことができるメソッドによって決定する．
-@@@ ここまで削除されている @@@
 
 ## ブール型
 
@@ -974,7 +958,7 @@ uintptr  ポインター値のみ解釈ビットを格納するのに十分大�
 配列はある要素型 (element type) と呼ばれる単一の型の要素の番号付き列である．
 要素の数はその配列の長さと呼ばれ，非負である．
 
-```
+```ebnf
 ArrayType   = "[" ArrayLength "]" ElementType .
 ArrayLength = Expression .
 ElementType = Type .
@@ -1029,7 +1013,7 @@ type (
 要素の数はそのスライスの長さ (length) と呼ばれ，必ず非負である．
 初期化されていないスライスの値は `nil` である．
 
-```
+```ebnf
 SliceType = "[" "]" ElementType .
 ```
 
@@ -1101,7 +1085,7 @@ new([100]int)[0:50]
 [ブランク](#ブランク識別子)でないフィールド名は[一意](#識別子の一意性)でなければならない (MUST)．
 
 
-```
+```ebnf
 StructType    = "struct" "{" { FieldDecl ";" } "}" .
 FieldDecl     = (IdentifierList Type | EmbeddedField) [ Tag ] .
 EmbeddedField = [ "*" ] TypeName [ TypeArgs ] .
@@ -1235,7 +1219,7 @@ type (
 ポインターの**基本型** (base type) と呼ばれる．
 未初期化のポインターの値は `nil` である．
 
-```
+```ebnf
 PointerType = "*" BaseType .
 BaseType    = Type .
 ```
@@ -1251,7 +1235,7 @@ BaseType    = Type .
 は同じパラメーター (parameter) と復帰型 (result type) をもつすべての関数の集合を表す．
 関数型の未初期化の変数の値は  `nil` である．
 
-```
+```ebnf
 FunctionType   = "func" Signature .
 Signature      = Parameters [ Result ] .
 Result         = Parameters | Type .
@@ -1294,7 +1278,8 @@ func(n int) func(p *T)
 そのような型は[**インターフェースの実装**](#インターフェースの実装]) (implement the interface) という．
 インターフェース型の未初期化な変数の値は `nil` である．
 
-```
+<a name="MethodName"></a>
+```ebnf
 InterfaceType  = "interface" "{" { InterfaceElem ";" } "}" .
 InterfaceElem  = MethodElem | TypeElem .
 MethodElem     = MethodName Signature .
@@ -1560,7 +1545,7 @@ type Bad4 interface {
 }
 ```
 
-## インターフェースの実装
+### インターフェースの実装
 
 以下の場合，
 型 `T` はインターフェース `I` を実装する.
@@ -1578,7 +1563,7 @@ type Bad4 interface {
 キー型 (key type) と呼ばれる別の型の一意**キー**の集合によってインデックスがつけられる．
 未初期化のマップの値は `nil` である．
 
-```
+```ebnf
 MapType     = "map" "[" KeyType "]" ElementType .
 KeyType     = Type .
 ```
@@ -1592,7 +1577,7 @@ KeyType     = Type .
 失敗すると，
 [ランタイムパニック](#ランタイムパニック)が発生する．
 
-```
+```go
 map[string]int
 map[*T]struct{ x, y float64 }
 map[string]interface{}
@@ -1632,7 +1617,7 @@ make(map[string]int, 100)
 未初期化のチャンネルの値は `nil` である．
 
 
-```
+```ebnf
 ChannelType = ( "chan" | "chan" "<-" | "<-" "chan" ) ElementType .
 ```
 
@@ -1775,15 +1760,13 @@ interface{ &lt;-chan int | chan&lt;- int }      // 単方向のチャンネル�
 `T` のコア型は `bytestring` と呼ばれる．
 
 
-<p>
 `bytestring` のコア型をもつインターフェースの例：
-</p>
 
-<pre>
+```go
 interface{ int }                          // int (通常のコア型と同じ)
 interface{ []byte | string }              // bytestring
 interface{ ~[]byte | myString }           // bytestring
-</pre>
+```
 
 `bytestring` は実際の型ではないことに注意されたい；
 つまり，変数が他の型と合成されることを宣言することに使用できない．
@@ -1794,7 +1777,7 @@ interface{ ~[]byte | myString }           // bytestring
 
 2つの型は**同一** (identical) または**異なる** (different) ものである．
 
-[定義型](#型定義)はいつでも他の型と異なる．
+[名前付き型](#型)はいつでも他の型と異なる．
 それ以外の場合，
 [基底](#型)型リテラルが構造的に同一な場合，
 2 つの型は同一である．
@@ -1813,12 +1796,10 @@ interface{ ~[]byte | myString }           // bytestring
 どちらの関数も可変長引数であるかそうでないかのどちらかであるとき，
 それらは同一である．
 パラメーターと復帰値の名前は一致する必要はない．
-- 2 つのインターフェース型は，
-同じ名前と一意関数型をもつメソッドの集合をもつとき，それらは同一である．
-異なるパッケージの[エクスポート](#エクスポートされた識別子)されないメソッド名はいつも異なる．
-メソッドの順序は関係ない．
+- 2 つのインターフェース型が，同じ型集合を持つとき，それらは同一である．
 - 2 つのマップ型は，一意キー型と要素型が一致するとき，それらは同一である．
 - 2 つのチャンネルは，一意要素型と，方向が一致するとき，それらは同一である．
+- 2 つの[インスタンス化された](#インスタンス化)型は，それらの定義された型とすべての型引数が同一であれば，同一である．
 
 
 次の宣言を考える．
@@ -1831,18 +1812,18 @@ type (
 	A3 = int
 	A4 = func(A3, float64) *A0
 	A5 = func(x int, _ float64) *[]string
-)
 
-type (
 	B0 A0
 	B1 []string
 	B2 struct{ a, b int }
 	B3 struct{ a, c int }
 	B4 func(int, float64) *B0
 	B5 func(x int, y float64) *A1
-)
 
-type	C0 = B0
+	C0 = B0
+	D0[P1, P2 any] struct{ x P1; y P2 }
+	E0 = D0[int, string]
+)
 ```
 
 これらは同一である．
@@ -1854,8 +1835,9 @@ A3 and int
 A4, func(int, float64) *[]string, and A5
 
 B0 and C0
+D0[int, string] and E0
 []int and []int
-struct{ a, b *T5 } and struct{ a, b *T5 }
+struct{ a, b *B5 } and struct{ a, b *B5 }
 func(x int, y float64) *[]string, func(int, float64) (result *[]string), and A5
 ```
 
@@ -1863,39 +1845,59 @@ func(x int, y float64) *[]string, func(int, float64) (result *[]string), and A5
 `B0` と `B1` は異なる;
 `B0` は `[]string` と異なるので，
 `func(int, float64) *B0` と`func(x int, y float64) *[]string` は異なる．
+`P1` と `P2` は異なる型パラメーターであるので，異なる
+`D0[int, string]` と `struct{ x int; y string }` は，
+前者がインタンス化された定義型であるのに対し，後者は型リテラルなので異なる．
+（それらは[代入可能](#代入可能性)であるが）
 
 
 ## 代入可能性
 
 次の条件のうち一つでも満たす場合，
-値 `x` は型 `T` の[変数](#変数)に**代入可能** (assignable) である．
+型 `V` の値 `x` は型 `T` の[変数](#変数)に**代入可能** (assignable) である．
 (`x` は `T` に代入可能)
 
-- `x` の型は `T` と同一である．
-- `x` の型 `V` と `T` は同一の[基底型](#型)をもち，
-   `V` と `T` の少なくともひとつは[定義](#型定義)型ではない．
-- `T` はインターフェース型であり， `x` は `T` を[実装](#インターフェース型)している．
-- `x` は双方向のチャンネル値であり，
-  `T` はチャンネル型であり，
-  `x` の型 `V` と `T` は同一の要素型をもち，
-  `V` か `T` の少なくともひとつは定義型ではない．
+- `V` と `T` は同一である．
+- `V` と `T` は同一の[基底型](#型)をもつが，
+  型パラメーターではなく，`V` か `T` の少なくとも一方は[名前付き型](#型)ではない．
+- `V` と `T` は同一の要素型を持つチャンネル型であり，
+  `V` は双方向のチャンネルであり，
+  `V` か `T` の少なくとも一方は[名前付き型](#型)ではない．
+- `T` はインターフェース型であるが，型パラメータではなく，`x` は `T` を[実装](#インターフェースの実装)している．
 - `x` は事前宣言された識別子 `nil` であり，`T`
-  はポインター型，関数型，スライス型，マップ型，チャンネル型，インターフェース型のいずれかである．
+  はポインター型，関数型，スライス型，マップ型，チャンネル型，型パラメーターではないインターフェース型のいずれかである．
 - `x` は型 `T` の値によって[表現可能](#表現可能性)な型なし[定数](#定数)である．
+
+さらに，`x` の型 `V` または `T` が型パラメーターの場合，
+以下のいずれかの条件に該当すれば，
+`x` は型 `T` の変数に代入可能である．
+
+- `x` が事前宣言された識別子 `nil` であり，
+`T` が型パラメーターであり，
+`x` は `T` の型集合の各型に代入可能である．
+- `V` は[名前付き型](#名前付き型)ではなく，
+`T` は型パラメーターであり，
+`x` は `T` の型集合の各型に代入可能である．
+- `V` は型パラメータであり，`T` は名前付き型ではなく，
+`V` の型集合の各型の値は `T` に代入可能である．
 
 ## 表現可能性
 
 次の条件のうち，ひとつの条件を満たすとき，
-[定数](#定数) `x` は 型 `T` の値によって**表現可能**である．
+[定数](#定数) `x` は 型 `T` （型 `T` は[型パラメータ](#型パラメーター宣言)ではない）の値によって**表現可能** (representable) である．
 
 - `x` は `T` によって[決定](#型)される値の集合に属する．
-- `T` は浮動小数点型であり，`x` がオーバーフローなしで `T` の精度に丸められる．
+- `T` は[浮動小数点型](#数値型)であり，`x` がオーバーフローなしで `T` の精度に丸められる．
    丸めは，IEEE 754 の偶数への丸め (round-to-even) 規則が使用されるが，
    IEEE 負ゼロは更に符号なしゼロに簡単化される．
    定数値は IEEE 負ゼロ, `NaN`, 無限大にはならないことに注意する．
 - `T` は複素数型で，`x` の[コンポーネント](#複素数の取扱)
 `real(x)` と `image(x)` は `T` のコンポーネント型 (`float32` または `float64`)
 の値として表現可能である．
+
+`T` が型パラメーターの場合，
+`x` が `T` の型集合の各型の値で表現可能であれば，
+`x` は型 `T` の値によって表現可能である．
 
 ```
 x                   T           x は T の値によって表現可能である， なぜなら
@@ -1924,12 +1926,34 @@ x                   T           x は T の値によって表現不可能であ�
 1e1000              float64     1e1000 は丸め後に IEEE +Inf にオーバーフローする
 ```
 
+
+## メソッド集合
+
+ある型の**メソッド集合** (method sets) は，
+その型の[オペランド](#オペランド)に対して呼び出されることができるメソッドを決定する．
+すべての型は，それに関連する (空を含む） メソッド集合を持つ．
+
+- [定義された型](#型定義) `T` のメソッド集合は，
+レシーバ型 `T` で宣言されたすべての[メソッド](#メソッド宣言)で構成される．
+- 定義された型 `T` （`T` はポインターでもインターフェースでもない）のポインターのメソッド集合は，
+レシーバー `*T` か `T` で宣言されるすべてのメソッドの集合である．
+- [インターフェース型](#インターフェース型)のメソッド集合は，
+そのインターフェースの[型集合](#インターフェース型)の各型のメソッド集合の共通部分である．
+
+埋め込みフィールドを含む構造体（および，構造体へのポインター）には，
+[構造体型](#構造体型)節で説明したように，さらなる規則が適用される．
+それ以外の型では，空のメソッド集合を持つ．
+
+メソッド集合において，
+各メソッドは
+[一意](#識別子の一意性)で，非[ブランク](#ブランク識別子)な[メソッド名] (#MethodName) をもたなければならない．
+
 # ブロック
 
 **ブロック** (block) は，
 波括弧 (brace brackets) 内の[宣言と文](#文)の列(空の場合もある)である．
 
-```
+```ebnf
 Block = "{" StatementList "}" .
 StatementList = { Statement ";" } .
 ```
@@ -1950,6 +1974,7 @@ StatementList = { Statement ";" } .
 
 **宣言** (declaration) は，非[ブランク](#ブランク識別子)な識別子を[定数](#定数宣言)，
 [型](#型宣言)，
+[型パラメーター](#型パラメーター)，
 [変数](#変数宣言)，
 [関数](#関数宣言)，
 [ラベル](#ラベル文)，
@@ -1966,7 +1991,7 @@ StatementList = { Statement ";" } .
 [`init` 関数](#パッケージの初期化)の宣言にのみ使用され，
 ブランク識別子と同様に，新しいバインドを導入しない．
 
-```
+```ebnf
 Declaration   = ConstDecl | TypeDecl | VarDecl .
 TopLevelDecl  = Declaration | FunctionDecl | MethodDecl .
 ```
@@ -1985,10 +2010,15 @@ Go は，[ブロック](#ブロック)を用いて，
    インポート宣言を含むファイルのファイルブロックである．
 4. メソッドレシーバー，関数パラメーター，復帰変数を示す識別子のスコープは，
    関数本体である．
-5. 関数内で宣言された定数と変数識別子のスコープは，
+5. 関数の型パラメーターを表す識別子や，
+   メソッドレシーバーで制限された識別子のスコープは，
+   関数名の後ろから始まり，関数本体の末尾で終了する．
+6. ある型の型パラメーターを示す識別子のスコープは，
+   型名の後ろから始まり，TypeSpec の終端で終了する．
+7. 関数内で宣言された定数と変数識別子のスコープは，
    `ConstSpec` と `VarSpec` (`ShortVarDecl`) の終わりから開始し，
    もっとも内側に含まれるブロックの終端で終了する．
-6. 関数内え宣言された型識別子のスコープは，
+8. 関数内で宣言された型識別子のスコープは，
    `TypeSpec` 内の `identifier` から開始し，
    もっとも内側に含まれるブロックの終端で終了する．
 
@@ -2024,7 +2054,7 @@ Go は，[ブロック](#ブロック)を用いて，
 **ブランク識別子** (blank identifier) はアンダースコア `_` によって表現される．
 ブランク識別子は，通常の (非ブランクな）識別子の代わりに匿名のプレースホルダー
 (訳注：一時的に保管するだけの変数）として機能し，
-[宣言](#宣言とスコープ)，[オペランド](#オペランド)，[代入](#代入)で特別な意味を持つ．
+[宣言](#宣言とスコープ)，[オペランド](#オペランド)，[代入式](#代入式)で特別な意味を持つ．
 
 
 ## 事前宣言された識別子
@@ -2033,7 +2063,8 @@ Go は，[ブロック](#ブロック)を用いて，
 
 ```
 型:
-	bool byte complex64 complex128 error float32 float64
+	any bool byte comparable
+	complex64 complex128 error float32 float64
 	int int8 int16 int32 int64 rune string
 	uint uint8 uint16 uint32 uint64 uintptr
 
@@ -2056,7 +2087,7 @@ Go は，[ブロック](#ブロック)を用いて，
 識別子は，**エクスポート** (export) できる．
 次の 2 つの条件を満足する場合， 識別子はエクスポートされる:
 
-1. 識別子名の最初の文字は，Unicode 大文字 (Unicode クラス "Lu") であり，
+1. 識別子名の最初の文字は，Unicode 大文字 (Unicode 文字カテゴリ "Lu") であり，
 2. 識別子は，パッケージブロックで宣言されるか，フィールド名であるか，メソッド名である．
 
 他のすべての識別子はエクスポートされない．
@@ -2083,7 +2114,7 @@ Go は，[ブロック](#ブロック)を用いて，
 右辺の n 番目の定数式の値がバインドされる．
 <a name="ConstSpec"></a>
 
-```
+```ebnf
 ConstDecl      = "const" ( ConstSpec | "(" { ConstSpec ";" } ")" ) .
 ConstSpec      = IdentifierList [ [ Type ] "=" ExpressionList ] .
 
@@ -2093,7 +2124,8 @@ ExpressionList = Expression { "," Expression } .
 
 型が示された場合，
 すべての定数は指定された型をとり，
-式はその型に[代入可能](#代入可能性)でなければならない．
+式はその型に[代入可能](#代入可能性)でなければならず，
+型パラメーターであってはならない．
 型が省略された場合，
 定数は対応する式の個々の型をとる．
 式の値が型なし[定数](#定数)の場合，
@@ -2225,11 +2257,10 @@ type (
 
 型定義 (type definition) は，指定された型と同じ[基底型](#型)と演算をもつ，
 新しく，別の型を生成し，
-それの新しい型を識別子にバインドする．
-
+識別子である**型名**をそれにバインドする．
 
 ```
-TypeDef = identifier Type .
+TypeDef = identifier [ TypeParameters ] Type .
 ```
 
 新しい型は**定義型** (defined type) と呼ばれる．
@@ -2246,7 +2277,7 @@ type (
 
 type TreeNode struct {
 	left, right *TreeNode
-	value *Comparable
+	value any
 }
 
 type Block interface {
@@ -2302,6 +2333,228 @@ func (tz TimeZone) String() string {
 	return fmt.Sprintf("GMT%+dh", tz)
 }
 ```
+
+型定義が[型パラメーター](#型パラメーター宣言)を指定する場合，
+型名は，**汎用型** (generic type) を表す．
+汎用型は，使用時には，[インスタンス化](#インスタンス化)されなければならない．
+
+```go
+type List[T any] struct {
+	next  *List[T]
+	value T
+}
+```
+
+ある型定義において，与えられた型は型パラメーターにはできない．
+
+
+```go
+type T[P any] P    // 不当: P は型パラメーターである
+
+func f[T any]() {
+	type L T   // 不当: T は包含する関数によって宣言された型パラメーターである
+}
+```
+
+汎用型は，それに関連する[メソッド](#メソッド宣言)を持つこともできる．
+この場合には，メソッドレシーバーは，汎用型定義にあらわれるのと同じ数の型パラメーターを宣言しなければならない．
+
+```go
+// メソッド Len はリンクリスト l の要素の数を返す．
+func (l *List[T]) Len() int  { … }
+```
+
+
+## 型パラメーター宣言
+
+型パラメーターリストは，
+汎用関数か型宣言の**型パラメーター**を宣言する．
+型パラメーターリストは，
+型パラメータ名がすべて存在しなければならないことと，
+そのリストが丸括弧ではなく角括弧で囲まれることを除いて，
+通常の[関数パラメーターのリスト](#関数型)と同じようにみえる．
+
+
+```ebnf
+TypeParameters  = "[" TypeParamList [ "," ] "]" .
+TypeParamList   = TypeParamDecl { "," TypeParamDecl } .
+TypeParamDecl   = IdentifierList TypeConstraint .
+```
+
+そのリストでは，非ブランクなすべての名前は一意でなければならない．
+それぞれの名前は，型パラメータを宣言し，
+それは，宣言中の（まだ）知られていない型のプレースホルダーとして働く，
+新しい，別の[名前付き型](#型)です．
+型パラメーターは，
+汎用関数や型の[インスタンス](#インスタンス化)の際に，
+**型引数**に置き換えられる．
+
+
+```go
+[P any]
+[S interface{ ~[]byte|string }]
+[S ~[]E, E any]
+[P Constraint[int]]
+[_ any]
+```
+
+通常の関数パラメーターにパラメーター型があるように，
+各型パラメーターは，対応する（メタ）型があり，
+その[型制約](#型制約)と呼ばれる．
+
+ある汎用型に対する
+型パラメータリストが，
+テキスト `P C` が有効な式を形成するように
+制約 `C` で単一の型パラメーター `P` を宣言するとき，
+構文解析であいまいさが生じる．
+
+
+```go
+type T[P *C] …
+type T[P (C)] …
+type T[P *C|Q] …
+…
+```
+
+<p>
+In these rare cases, the type parameter list is indistinguishable from an
+expression and the type declaration is parsed as an array type declaration.
+To resolve the ambiguity, embed the constraint in an
+<a href="#Interface_types">interface</a> or use a trailing comma:
+</p>
+
+<pre>
+type T[P interface{*C}] …
+type T[P *C,] …
+</pre>
+
+<p>
+Type parameters may also be declared by the receiver specification
+of a <a href="#Method_declarations">method declaration</a> associated
+with a generic type.
+</p>
+
+<p>
+Within a type parameter list of a generic type <code>T</code>, a type constraint
+may not (directly, or indirectly through the type parameter list of another
+generic type) refer to <code>T</code>.
+</p>
+
+```go
+type T1[P T1[P]] …                    // illegal: T1 refers to itself
+type T2[P interface{ T2[int] }] …     // illegal: T2 refers to itself
+type T3[P interface{ m(T3[int])}] …   // illegal: T3 refers to itself
+type T4[P T5[P]] …                    // illegal: T4 refers to T5 and
+type T5[P T4[P]] …                    //          T5 refers to T4
+
+type T6[P int] struct{ f *T6[P] }     // ok: reference to T6 is not in type parameter list
+```
+
+
+### 型制約
+
+<p>
+A <i>type constraint</i> is an <a href="#Interface_types">interface</a> that defines the
+set of permissible type arguments for the respective type parameter and controls the
+operations supported by values of that type parameter.
+</p>
+
+<pre class="ebnf">
+TypeConstraint = TypeElem .
+</pre>
+
+<p>
+If the constraint is an interface literal of the form <code>interface{E}</code> where
+<code>E</code> is an embedded <a href="#Interface_types">type element</a> (not a method), in a type parameter list
+the enclosing <code>interface{ … }</code> may be omitted for convenience:
+</p>
+
+```go
+[T []P]                      // = [T interface{[]P}]
+[T ~int]                     // = [T interface{~int}]
+[T int|string]               // = [T interface{int|string}]
+type Constraint ~int         // illegal: ~int is not in a type parameter list
+```
+
+<!--
+We should be able to simplify the rules for comparable or delegate some of them
+elsewhere since we have a section that clearly defines how interfaces implement
+other interfaces based on their type sets. But this should get us going for now.
+-->
+
+<p>
+The <a href="#Predeclared_identifiers">predeclared</a>
+<a href="#Interface_types">interface type</a> <code>comparable</code>
+denotes the set of all non-interface types that are
+<a href="#Comparison_operators">strictly comparable</a>.
+</p>
+
+<p>
+Even though interfaces that are not type parameters are <a href="#Comparison_operators">comparable</a>,
+they are not strictly comparable and therefore they do not implement <code>comparable</code>.
+However, they <a href="#Satisfying_a_type_constraint">satisfy</a> <code>comparable</code>.
+</p>
+
+<pre>
+int                          // implements comparable (int is strictly comparable)
+[]byte                       // does not implement comparable (slices cannot be compared)
+interface{}                  // does not implement comparable (see above)
+interface{ ~int | ~string }  // type parameter only: implements comparable (int, string types are stricly comparable)
+interface{ comparable }      // type parameter only: implements comparable (comparable implements itself)
+interface{ ~int | ~[]byte }  // type parameter only: does not implement comparable (slices are not comparable)
+interface{ ~struct{ any } }  // type parameter only: does not implement comparable (field any is not strictly comparable)
+</pre>
+
+<p>
+The <code>comparable</code> interface and interfaces that (directly or indirectly) embed
+<code>comparable</code> may only be used as type constraints. They cannot be the types of
+values or variables, or components of other, non-interface types.
+</p>
+
+### <h4 id="Satisfying_a_type_constraint">Satisfying a type constraint</h4>
+
+<p>
+A type argument <code>T</code><i> satisfies</i> a type constraint <code>C</code>
+if <code>T</code> is an element of the type set defined by <code>C</code>; i.e.,
+if <code>T</code> <a href="#Implementing_an_interface">implements</a> <code>C</code>.
+As an exception, a <a href="#Comparison_operators">strictly comparable</a>
+type constraint may also be satisfied by a <a href="#Comparison_operators">comparable</a>
+(not necessarily strictly comparable) type argument.
+More precisely:
+</p>
+
+<p>
+A type T <i>satisfies</i> a constraint <code>C</code> if
+</p>
+
+<ul>
+<li>
+	<code>T</code> <a href="#Implementing_an_interface">implements</a> <code>C</code>; or
+</li>
+<li>
+	<code>C</code> can be written in the form <code>interface{ comparable; E }</code>,
+	where <code>E</code> is a <a href="#Basic_interfaces">basic interface</a> and
+	<code>T</code> is <a href="#Comparison_operators">comparable</a> and implements <code>E</code>.
+</li>
+</ul>
+
+<pre>
+type argument      type constraint                // constraint satisfaction
+
+int                interface{ ~int }              // satisfied: int implements interface{ ~int }
+string             comparable                     // satisfied: string implements comparable (string is stricty comparable)
+[]byte             comparable                     // not satisfied: slices are not comparable
+any                interface{ comparable; int }   // not satisfied: any does not implement interface{ int }
+any                comparable                     // satisfied: any is comparable and implements the basic interface any
+struct{f any}      comparable                     // satisfied: struct{f any} is comparable and implements the basic interface any
+any                interface{ comparable; m() }   // not satisfied: any does not implement the basic interface interface{ m() }
+interface{ m() }   interface{ comparable; m() }   // satisfied: interface{ m() } is comparable and implements the basic interface interface{ m() }
+</pre>
+
+<p>
+Because of the exception in the constraint satisfaction rule, comparing operands of type parameter type
+may panic at run-time (even though comparable type parameters are always strictly comparable).
+</p>
 
 ## 変数宣言
 
