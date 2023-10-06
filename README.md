@@ -131,7 +131,7 @@ Go プログラミング言語仕様
   - [式文](#式文)
   - [送信文](#送信文)
   - [インクリメント文，デクリメント文](#incdec)
-  - [代入式](#代入式)
+  - [代入文](#代入文)
   - [`if` 文](#if文)
   - [`switch` 文](#switch文)
   - [`for` 文](#for文)
@@ -742,7 +742,7 @@ interpreted_string_lit = `"` { unicode_value | byte_value } `"` .
 [定数宣言](#定数宣言)や[定数変換](#変換)によって
 明示的に型を指定されるか，
 もしくは，
-[変数宣言](#変数宣言)や[代入式](#代入)で使用するか，
+[変数宣言](#変数宣言)や[代入文](#代入)で使用するか，
 [式](#式)のオペランドとして暗黙的に指定される．
 定数値がそれぞれの型の値として[表現](#表現可能性)されない場合には，
 エラーになる．
@@ -2057,7 +2057,7 @@ Go は，[ブロック](#ブロック)を用いて，
 **ブランク識別子** (blank identifier) はアンダースコア `_` によって表現される．
 ブランク識別子は，通常の (非ブランクな）識別子の代わりに匿名のプレースホルダー
 (訳注：一時的に保管するだけの変数）として機能し，
-[宣言](#宣言とスコープ)，[オペランド](#オペランド)，[代入式](#代入式)で特別な意味を持つ．
+[宣言](#宣言とスコープ)，[オペランド](#オペランド)，[代入文](#代入文)で特別な意味を持つ．
 
 
 ## 事前宣言された識別子
@@ -2802,7 +2802,7 @@ OperandName = identifier | QualifiedIdent .
 [型引数](#インスタンス化)のリストを続けることができる．
 結果として得られるオペランドは，[インスタンス化された](#インスタンス化)関数である．
 
-[ブランク](#ブランク識別子)は[代入式](#代入式)の左辺においてのみオペランドとして現れる．
+[ブランク](#ブランク識別子)は[代入文](#代入文)の左辺においてのみオペランドとして現れる．
 
 実装上の制限：
 オペランドの型が空の[型集合](#インターフェース型)を持つ[型パラメーター](#型パラメーター宣言)である場合，
@@ -3475,13 +3475,14 @@ var v, ok = a[x]
 
 ### 単純なスライス式
 
-文字列，配列，配列へのポインター，または，スライスに対する一次式
+一次式
 
 ```go
 a[low : high]
 ```
 
-は，部分文字列かスライスを構築する．
+は，部分文字列またはスライスを構築する．
+`a` のコア型は，文字列，配列，配列へのポインター，スライス，または，[`bytestring`](#コア型)のいずれかでなければならない．
 **インデックス** `low` と `high` はオペランド `a` のどの要素が復帰値に現れるかを選択する．
 復帰値は，0 から始まり，長さ `high - low` のインデックスを持つ．
 配列 `a` をスライスすると，
@@ -3549,11 +3550,13 @@ var a [10]int
 s1 := a[3:7]   // s1 の基底配列は配列 a; &s1[2] == &a[5]
 s2 := s1[1:4]  // s2 の基底配列は s1 の基底配列である配列 a; &s2[1] == &a[5]
 s2[1] = 42     // s2[1] == s1[2] == a[5] == 42; すべて，同じ基底配列の要素を参照する
+
+var s []int
+s3 := s[:0]    // s3 == nil
 ```
 
 ### 完全なスライス式
 
-配列，配列へのポインター，スライス `a` (文字列ではない）に対して，
 一次式
 
 ```go
@@ -3562,8 +3565,9 @@ a[low : high : max]
 
 は，同じ型で単純なスライス表現 `a[low : high]` と同じ長さと要素を持つスライスを構築する．
 さらに，
-復帰されるスライスの容量@@@
+復帰されるスライスの容量を `max-low` に設定することで制御する．
 最初のインデックスのみ省略でき，その値は 0 になる．
+`a` の[コア型](#コア型)は配列，配列へのポインター，またはスライスでなければならない（ただし，文字列は不可）．
 配列 `a` をスライスすると，
 
 ```go
@@ -3599,7 +3603,9 @@ t[1] == 3
 
 ## 型アサーション
 
-[インターフェース型](#インターフェース型)の式 `x` と型 `T` に対して，一次式
+[型パラメーター](#パラメーター宣言)ではない[インターフェース型](#インターフェース型)の式 `x` と
+型 `T` に対して，
+一次式
 
 ```go
 x.(T)
@@ -3618,7 +3624,7 @@ x.(T)
 `x` に型 `T` の値を格納できないので，
 型アサーションは無効となる．
 `T` がインターフェース型であれば，
-`x.(T)` は `x` の動的な型がインターフェース `T` を実装することを主張する．
+`x.(T)` は `x` の動的な型がインターフェース `T` を[実装](#インターフェースの実装)することを主張する．
 
 型アサーションが成り立つとき，
 式の値は，
@@ -3644,7 +3650,7 @@ func f(y I) {
 }
 ```
 
-[代入](#代入)や初期化で使用される型アサーション
+[代入文](#代入文)や初期化で使用される型アサーション
 
 ```go
 v, ok = x.(T)
@@ -3662,7 +3668,8 @@ var v, ok interface{} = x.(T) // v と ok の動的な型は T と bool であ�
 
 ## 呼び出し
 
-関数型 `F` の式 `f` が与えられたとき，
+
+[関数型](#関数型)の[コア型](#コア型) `F` をもつ式 `f` が与えられたとき，
 
 
 ```go
@@ -3684,6 +3691,10 @@ math.Atan2(x, y)  // 関数呼び出し
 var pt *Point
 pt.Scale(3.5)     // レシーバー pt を用いたメソッド呼び出し
 ```
+
+`f` がジェネリクス関数を表すとき，
+呼び出したり，関数値として使用する前に
+[インスタンス化](#インスタンス化)されなければならない．
 
 関数呼び出しでは，
 関数値と引数は，[通常の順序](#評価順序)で評価される．
@@ -3769,11 +3780,10 @@ Greeting("hello:", "Joe", "Anna", "Eileen")
 最初の呼び出しでは， `who` は `nil` であり，
 次の呼び出しでは，`who` は `[]string{"Joe", "Anna", "Eileen"}` である．
 
-最後の引数は，スライス型 `[]T` に代入可能である場合，
-引数の後に `...` を続けると，
-`...T` パラメーターの値がそのまま渡される．
+最後の引数が，スライス型 `[]T` に代入可能であり，
+その後に `...` が続く場合，
+`...T` パラメータの値として変更せずに渡される．
 このケースでは，新しいスライスは生成されない．
-
 
 次のスライス `s` と呼び出しを考えると，
 
@@ -3785,11 +3795,144 @@ Greeting("goodbye:", s...)
 `Greeting` 内では，
 `s` と同じ基底配列の値をもつ．
 
+## インスタンス化
+
+ジェネリクス関数や型は，
+**型引数**を型パラメーターに置き換えて
+**インスタンス化**される．
+インスタンス化は，2つのステップで進行する：
+
+1. 各型引数は，ジェネリクス宣言において対応するパラメーターに置き換えられる．
+この置き換えは，関数または型宣言全体にわたって行われ，
+型パラメーターリスト自身やそのリスト内の型も含まれる．
+2. 置き換え後，各型引数は，対応する型パラメーターの[制約](#型パラメーター宣言)（必要であれば，インスタンス化される）を[充足](#型制約の充足)しなければならない．そうでなければ，インスタンス化は失敗する．
+
+型をインスタンス化すると，
+新しい，非ジェネリクスな[名前付き型](#型)ができる;
+関数をインスタンス化すると，
+新しい，非ジェネリクスな関数が生成される．
+
+
+```
+型パラメーターリスト   型引数            置き換え後
+
+[P any]                int               int は any を充足する
+[S ~[]E, E any]        []int, int        []int は ~[]int を充足する, int は any を充足する
+[P io.Writer]          string            不正: string は io.Writer を充足しない
+[P comparable]         any               any は comparable を充足する（が，実装しない）
+```
+
+ジェネリクス関数では，
+型引数は明示的に提供されることもあれば，
+部分的または完全に[推論](#型推論)される場合もある．
+呼び出され**ない**ジェネリクス関数は，
+インスタンス化のために型引数のリストを必要とする；
+そのリストが部分的であれば，
+残りすべての型引数は推論可能でなければならない．
+呼び出されるジェネリクス関数は
+（あるいは部分的に）型引数リストを提供しても良いし，
+省略された型引数が通常の（非型）関数引数から推定可能であれば，
+それを完全に省略しても良い．
+
+```go
+func min[T ~int|~float64](x, y T) T { … }
+
+f := min                   // 不正: min は呼び出されずに使用する場合は，型引数でインスタンス化する必要がある
+minInt := min[int]         // minInt は型 func(x, y int) int をもつ
+a := minInt(2, 3)          // a は型 int の値 2 をもつ
+b := min[float64](2.0, 3)  // b は型 float64 の値 2.0 をもつ
+c := min(b, -1)            // c は型 float64 の値 -1.0 をもつ
+```
+
+部分型引数リストは空であってはならない；
+少なくとも最初の引数は存在しなければならない．
+そのリストは，型引数の完全なリストのプレフィックスであり，
+残りの引数は推論するために残される．
+おおざっぱにいうと，型引数は "右から左へ" 省略できる．
+
+```go
+func apply[S ~[]E, E any](s S, f func(E) E) S { … }
+
+f0 := apply[]                  // 不正: 型引数リストは空にはできない
+f1 := apply[[]int]             // S の型引数は明示的に提供され， E の型引数は推論される
+f2 := apply[[]string, string]  // 型引数は両方とも明示的に提供される
+
+var bytes []byte
+r := apply(bytes, func(byte) byte { … })  // 型引数は両方とも関数引数から推論される
+```
+
+ジェネリクス型に対して，すべての型引数はいつでも明示的に提供されなければならない．
+
+## 型推論
+
+不足する型引数は，以下で説明する一連のステップによって**推論**できる．
+各ステップでは，
+既知の情報を用いて，追加の型引数を推論しようとする．
+型推論は，すべての型引数が判明した時点で停止する．
+型推論が完了したあとでも，
+すべての型引数に型パラメーターを置き換え，
+各型引数が関連する制約を[実装](#インターフェースの実装)していることを検証する必要がある：
+推論された型引数が制約を実装していない場合，
+インスタンス化は失敗する．
+
+型推論は以下に基づく
+
+- [型パラメーターリスト](#型パラメーター宣言)
+- もしあれば，既知の型引数で初期化された置き換えマップ `M 
+
+</li>
+<li>
+	a substitution map <i>M</i> initialized with the known type arguments, if any
+</li>
+<li>
+	a (possibly empty) list of ordinary function arguments (in case of a function call only)
+</li>
+</ul>
+
+<p>
+and then proceeds with the following steps:
+</p>
+
+<ol>
+<li>
+	apply <a href="#Function_argument_type_inference"><i>function argument type inference</i></a>
+	to all <i>typed</i> ordinary function arguments
+</li>
+<li>
+	apply <a href="#Constraint_type_inference"><i>constraint type inference</i></a>
+</li>
+<li>
+	apply function argument type inference to all <i>untyped</i> ordinary function arguments
+	using the default type for each of the untyped function arguments
+</li>
+<li>
+	apply constraint type inference
+</li>
+</ol>
+
+<p>
+If there are no ordinary or untyped function arguments, the respective steps are skipped.
+Constraint type inference is skipped if the previous step didn't infer any new type arguments,
+but it is run at least once if there are missing type arguments.
+</p>
+
+<p>
+The substitution map <i>M</i> is carried through all steps, and each step may add entries to <i>M</i>.
+The process stops as soon as <i>M</i> has a type argument for each type parameter or if an inference step fails.
+If an inference step fails, or if <i>M</i> is still missing type arguments after the last step, type inference fails.
+</p>
+
+
+
+### Type unification</h4>
+### Function argument type inference</h4>
+### Constraint type inference</h4>
+
 ## 演算子
 
 演算子 (operator) は，オペランドを式に結合する．
 
-```
+```ebnf
 Expression = UnaryExpr | Expression binary_op Expression .
 UnaryExpr  = PrimaryExpr | unary_op UnaryExpr .
 
